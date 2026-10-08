@@ -124,7 +124,10 @@ def smoke(base_url=CANONICAL_ORIGIN, origin=CANONICAL_ORIGIN, *, allow_paid=Fals
         chat = request(first, "POST", "/api/chat", headers=csrf,
                        json={"message": message, "scenario": edited}).json()
         require(chat["provider"] == "openai", "actual_openai_provider_required")
+        require(chat.get("advisor_status") == "completed", "accepted_conversational_reply_required")
         usage = chat["usage"]
+        require(usage.get("api_calls") == 2 and usage.get("usage_complete") is True,
+                "completed_draft_and_review_required")
         require(type(usage["input_tokens"]) is int and usage["input_tokens"] > 0
                 and type(usage["output_tokens"]) is int and usage["output_tokens"] > 0
                 and type(usage["cached_input_tokens"]) is int and usage["cached_input_tokens"] >= 0,
@@ -133,7 +136,8 @@ def smoke(base_url=CANONICAL_ORIGIN, origin=CANONICAL_ORIGIN, *, allow_paid=Fals
         require(cost is None or (type(cost) in {int, float} and math.isfinite(cost) and cost >= 0),
                 "invalid_server_cost_estimate")
         require(cost is None or bool(usage.get("price_reference")), "cost_estimate_reference_missing")
-        require(chat["scenario"] == scenario, "advisor_changed_python_scenario")
+        require(chat["scenario"] == scenario and chat.get("scenario_explanation_included") is True,
+                "advisor_changed_or_omitted_python_scenario")
         source_by_id = {source["id"]: source for source in demo["sources"]}
         require(chat["citations"] and all(source["is_synthetic"] is True and source == source_by_id.get(source["id"])
                                            for source in chat["citations"]), "grounded_synthetic_citations_required")
@@ -141,6 +145,7 @@ def smoke(base_url=CANONICAL_ORIGIN, origin=CANONICAL_ORIGIN, *, allow_paid=Fals
         require("10,800.00" in chat["answer"]["summary"] and "129,600.00" in chat["answer"]["summary"],
                 "authoritative_numerical_explanation_missing")
         require(chat.get("plain_reply") == chat["answer"]["summary"]
+                and "Could you share a little more detail?" not in chat["plain_reply"]
                 and len(chat["plain_reply"].split()) < 100
                 and not any(label in chat["plain_reply"] for label in (
                     "Hypothesis:", "Limits and unknowns", "Evidence-based guidance", "E2", "E3")),

@@ -44,6 +44,24 @@ class AdvisorAnswer(StrictModel):
     unknowns: list[str]
 
 
+class ChatSentence(StrictModel):
+    text: str = Field(min_length=1, max_length=400)
+    basis_ids: list[str] = Field(min_length=1, max_length=5)
+
+
+class ChatDraft(AdvisorAnswer):
+    sentences: list[ChatSentence] = Field(min_length=1, max_length=3)
+
+
+class SentenceDecision(StrictModel):
+    index: int = Field(ge=0, le=2)
+    supported: bool
+
+
+class ChatReview(StrictModel):
+    decisions: list[SentenceDecision]
+
+
 class SimulatorInput(StrictModel):
     monthly_leads: int = Field(default=300, ge=0, le=100000)
     missed_rate: float = Field(default=0.25, ge=0, le=1, allow_inf_nan=False)

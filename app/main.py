@@ -185,6 +185,7 @@ def create_app(settings=None, secret_store=None, advisor=None):
                          model=result.usage["model"], purpose=purpose, status=result.status, **values))
             db.commit()
         log.info(json.dumps({"event": "advisor_usage", "request_id": request.state.request_id, "provider": result.provider,
+                             "api_calls": result.usage.get("api_calls", 0), "usage_complete": result.usage.get("usage_complete", True),
                              "model": result.usage["model"], "status": result.status, **values}))
         return result
 
@@ -347,9 +348,11 @@ def create_app(settings=None, secret_store=None, advisor=None):
         db.add_all([Message(session_id=current.id, role="user", content=payload.message), Message(session_id=current.id, role="assistant", content=response_text)])
         db.commit()
         used = {id_ for c in result.answer.claims for id_ in c.source_ids} | {id_ for r in result.answer.recommendations for id_ in r.source_ids}
+        used.update(getattr(result, "cited_source_ids", ()))
         return {"answer": result.answer.model_dump(), "plain_reply": response_text,
                 "citations": [s for s in prospect.sources if s["id"] in used],
-                "provider": result.provider, "usage": result.usage, "request_id": request.state.request_id,
+                "provider": result.provider, "advisor_status": result.status,
+                "usage": result.usage, "request_id": request.state.request_id,
                 "scenario": scenario, "scenario_explanation_included": explain_scenario}
 
     @app.get("/api/history")

@@ -2,7 +2,30 @@
 
 October 8, 2026 (Asia/Singapore). The initial local/read-only checks were followed by approved Cloud Run/SQL deployment, public source/initial CI and a completed Cloud Tasks research flow in the dedicated project. This document preserves those stages; [live-release.md](live-release.md) is the current checkpoint. No delivered CRM task, customer outreach, live voice call or booking is claimed.
 
-## October 9 customer-chat simplification
+## October 9 conversation follow-up regression
+
+The advisor generates distinct recommendation, how-it-works and cost replies using conversation context. Earlier one-turn live checks were insufficient to verify this behavior; they remain evidence for presentation and persistence only.
+
+The conversation fix accepts model-written `ChatDraft` sentences with valid basis references after deterministic reference/80-word-total/numeric-literal/exact-repeat checks and a separate batched `ChatReview` semantic support decision. Known source aliases resolve only to retained basis entries. Exact legacy canned assistant replies become prior-topic markers only in model input; real replies and user history are preserved, and markers are never displayed or persisted. Semantic review is probabilistic, not deterministic proof. Accepted generated replies are stored and avoid routine unsolicited caveats/configuration jargon; structured intelligence retains its reviewed catalogue, and API citations also include source references from chat sentences when claims/recommendations are empty. Python remains responsible for calculator values.
+
+| Check | Evidence for the follow-up fix |
+| --- | --- |
+| Offline suite | Final source: 270 pytest tests passed in 19.41 seconds, including 41 conversation regressions, preserved fresh recruiting prefixes in history and official-SDK transport checks for draft/review schemas; Ruff passed |
+| Real local provider probe | Five old canned turns were included in history; three sequential synthetic questions completed with distinct recommendation, process and pricing answers, using two application Responses calls per turn. This is provider behavior evidence, not final-host deployment evidence |
+| R4 image/deployment | Independent serving-image readback matched the r4 Linux manifest on canonical `prospectiq-00011-qqj` and staging `prospectiq-00007-74p`, both Ready at 100% traffic. Exact digests are recorded in [live-release.md](live-release.md). Fresh credential-free r4 container passed 25 HTTP checks with zero provider calls |
+| Scenario method/context | Chat receives scenario presence/request flags and explains the calculation in words; numeric instructions/full context apply to intelligence. FastAPI appends exact requested Python figures. Real local scenario probe completed two application calls: 2,856 input / 386 output tokens, server estimate $0.00176 |
+| Accepted-response checks | Both live smoke scripts require `advisor_status=completed`; a declined draft cannot pass as a functioning advisor reply |
+| Usage behavior | Draft and review usage are aggregated, normally two application API calls. `usage_complete` flags incomplete totals; review failure retains known draft usage and returns a `null` cost estimate. Quotas count logical advisor requests; `api_calls` excludes underlying SDK retries |
+| R4 live conversation | [smoke_conversation.py](../scripts/smoke_conversation.py) passed three sequential turns and 14 HTTP checks on both r4 services, with six application Responses calls each. Distinct recommendation/process/pricing replies, history and privacy passed. All six requests independently matched completed usage and HTTP 200 in Cloud Logging; exact request IDs are recorded in [live-release.md](live-release.md). Paid smoke requires `--paid-synthetic-chat` |
+| R4 aggregate usage | Canonical: 8,375 input / 506 output / zero cached tokens, estimate $0.0041596. Staging: 8,292 input / 523 output / zero cached tokens, estimate $0.0041536 |
+| Strict canonical scenario | 25 HTTP checks passed. Request `3b9de8a279be4833a104d1b26a439075`: two completed calls, 2,949 input / 426 output / zero cached tokens, estimate $0.0018612, matching completed Cloud Logging usage and HTTP 200. Generated method explanation, exact Python numbers, accepted status, citations and history verified |
+| Older browser-session compatibility | Chrome retained five earlier repeated turns and distinct r3 recommendation/how/cost replies. On r4 the same session accepted scenario request `dd1461ca838b4926a820bd07db13db04`: 2,969 input / 264 output tokens, two completed calls and HTTP 200 independently matched in Cloud Logging. Visible Python output: $8,100 per month / $97,200 per year for current assumptions |
+| Cached private pages | Earlier 18 HTTP checks across two cached pages passed without outreach; these privacy checks are distinct from the paid conversation checks |
+| Publication privacy | Source scan: 76 candidates, four actual source-project Secret Manager values and eight private-artifact fingerprints, zero findings. R4 comparison of four actual target-project values against 76 candidates also passed with zero findings |
+| Verification limit | The first r4 canonical attempt returned HTTP 500 on its second turn after the first completed. No matching application-log entry was found; cause unverified. A later identical complete run passed on the same image, which does not prove the intermittent cause fixed |
+| Source checks | This checkpoint records local/live checks; GitHub Actions repeats credential-free checks on source updates. The original `v1.1.0` tag remains unchanged |
+
+## Earlier October 9 customer-chat simplification
 
 The deployed customer chat uses short, plain-English replies instead of raw quote blocks, warning/limits panels, E-number markers and token/request clutter. Backend grounding and unsupported-claim rejection, API source citations, usage records and Engineering View remain. Requested scenario explanations still use exact Python figures. New history stores the display reply; older server-generated transcripts read back without the long appendix. Generic actual-company revenue questions no longer automatically append simulator figures.
 

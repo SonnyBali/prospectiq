@@ -7,7 +7,7 @@ from openai import OpenAI
 
 from app.advisor import Advisor, SOLUTION_CATALOGUE, estimate_cost, plain_history, safe_answer
 from app.config import Settings
-from app.schemas import AdvisorAnswer, SimulatorInput
+from app.schemas import AdvisorAnswer, ChatDraft, ChatReview, SentenceDecision, SimulatorInput
 from app.simulator import calculate
 
 SOURCES = [{"id": "intake", "excerpt": "After-hours callers reach voicemail.", "title": "Intake", "url": "https://example.com/intake", "observed_at": "2026-10-08T00:00:00Z", "is_synthetic": True}]
@@ -171,9 +171,15 @@ def test_short_recruiting_questions_receive_scoped_sdk_instruction_and_concrete_
     requests = []
     def parse(**kwargs):
         requests.append(kwargs)
+        if kwargs["text_format"] == ChatReview:
+            return SimpleNamespace(status="completed", usage=SimpleNamespace(input_tokens=1, output_tokens=1),
+                                   output_parsed=ChatReview(decisions=[SentenceDecision(index=0, supported=True)]))
         return SimpleNamespace(status="completed", usage=SimpleNamespace(input_tokens=1, output_tokens=1),
-                               output_parsed=answer(recommendations=[{"title": "Recruiter briefing assistant",
-                                                                     "rationale": "Untrusted", "source_ids": ["talent"]}]))
+                               output_parsed=ChatDraft(summary="", claims=[], unknowns=[],
+                                                       sentences=[{"text": "It can be adapted for recruiting: it could prepare a company and role briefing for your team.",
+                                                                   "basis_ids": ["proposal:Recruiter briefing assistant"]}],
+                                                       recommendations=[{"title": "Recruiter briefing assistant",
+                                                                         "rationale": "Untrusted", "source_ids": ["talent"]}]))
     sdk = SimpleNamespace(responses=SimpleNamespace(parse=parse))
     result = Advisor(Settings(), None, sdk).answer(SimpleNamespace(profile={"company_name": "Insight Global"},
                                                  synthetic=False, sources=[STAFFING_SOURCE]), question, [])
@@ -197,16 +203,31 @@ def test_official_sdk_responses_parse_and_store_false():
         payload = json.loads(request.content)
         captured.append(payload)
         assert request.url.path == "/v1/responses"
-        content = answer(claims=[{"text": "After-hours callers reach voicemail.", "source_ids": ["intake"]}], recommendations=[{"title": "After-hours AI receptionist", "rationale": "Hypothesis: test intake.", "source_ids": ["intake"]}]).model_dump_json()
+        if len(captured) == 1:
+            content = ChatDraft(summary="", claims=[{"text": "After-hours callers reach voicemail.", "source_ids": ["intake"]}],
+                                recommendations=[{"title": "After-hours AI receptionist", "rationale": "Hypothesis: test intake.", "source_ids": ["intake"]}],
+                                unknowns=[], sentences=[{"text": "You could try an after-hours assistant to collect messages for your team.",
+                                                        "basis_ids": ["source:intake", "proposal:After-hours AI receptionist"]}]).model_dump_json()
+        else:
+            content = ChatReview(decisions=[SentenceDecision(index=0, supported=True)]).model_dump_json()
         return httpx.Response(200, json={"id": "resp_test", "object": "response", "created_at": 1, "status": "completed", "model": "gpt-4.1-mini", "output": [{"id": "msg_test", "type": "message", "role": "assistant", "status": "completed", "content": [{"type": "output_text", "text": content, "annotations": []}]}], "usage": {"input_tokens": 100, "input_tokens_details": {"cached_tokens": 20}, "output_tokens": 50, "output_tokens_details": {"reasoning_tokens": 0}, "total_tokens": 150}})
     sdk = OpenAI(api_key="test-only", http_client=httpx.Client(transport=httpx.MockTransport(transport)))
     settings = Settings(openai_model="gpt-4.1-mini")
     result = Advisor(settings, None, sdk).answer(SimpleNamespace(profile={"company_name": "Example"}, synthetic=True, sources=SOURCES), "What should we do?", [{"role": "user", "content": "Earlier turn"}])
     assert result.provider == "openai"
-    assert result.usage["cached_input_tokens"] == 20
+    assert result.usage["cached_input_tokens"] == 40
     assert result.answer.claims[0].source_ids == ["intake"]
+    assert result.answer.summary == "You could try an after-hours assistant to collect messages for your team."
+    assert result.cited_source_ids == ("intake",)
+    assert result.usage["api_calls"] == 2
+    assert result.usage["input_tokens"] == 200
+    assert result.usage["output_tokens"] == 100
     assert captured[0]["store"] is False
     assert captured[0]["model"] == "gpt-4.1-mini"
     assert captured[0]["text"]["format"]["type"] == "json_schema"
     assert captured[0]["input"][1]["content"] == "Earlier turn"
+    assert len(captured) == 2 and captured[1]["store"] is False
+    assert captured[0]["text"]["format"]["name"] == "ChatDraft"
+    assert captured[1]["text"]["format"]["name"] == "ChatReview"
+    assert "Earlier turn" not in json.dumps(captured[1]["input"])
     sdk.close()
