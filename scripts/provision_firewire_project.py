@@ -28,7 +28,7 @@ SOURCE = "ai-leadscore"
 DEFAULT_TARGET = "firewireads-platform"
 DISPLAY_NAME = "FireWireAds Platform"
 SECRETS = ("OPENAI_API_KEY", "FIREWIRE_GHL_API_KEY", "FIREWIRE_GHL_LOCATION_ID", "PROSPECTIQ_ADMIN_KEY")
-APIS = ("run.googleapis.com", "sqladmin.googleapis.com", "cloudtasks.googleapis.com",
+APIS = ("run.googleapis.com", "sqladmin.googleapis.com", "sql-component.googleapis.com", "cloudtasks.googleapis.com",
         "secretmanager.googleapis.com", "logging.googleapis.com", "artifactregistry.googleapis.com",
         "aiplatform.googleapis.com", "compute.googleapis.com", "iam.googleapis.com",
         "iamcredentials.googleapis.com", "cloudresourcemanager.googleapis.com", "serviceusage.googleapis.com")

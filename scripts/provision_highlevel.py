@@ -1,4 +1,4 @@
-"""Create only ProspectIQ's dedicated FireWire contact field and native trigger link.
+"""Create ProspectIQ's FireWire field, trigger link, and workflow tag definitions.
 
 Credentials stay in Secret Manager/in memory. No contacts, messages, enrollments,
 or existing workflows are changed. Unknown write outcomes require reconciliation.
@@ -40,13 +40,14 @@ def main():
         tag_records = []
         tags_url = f'{HighLevelClient.API}/locations/{location}/tags'
         headers = {'Authorization': f'Bearer {token}', 'Version': '2021-07-28'}
-        for name in ('prospectiq-approved', 'prospectiq-feedback-approved', 'prospectiq-feedback-sent', 'Spanish'):
+        for name in ('prospectiq-approved', 'prospectiq-feedback-approved', 'prospectiq-feedback-sent', 'Spanish',
+                     'unsubscribe', 'unsubscribed', 'opt-out', 'dnc', 'do not contact'):
             before = transport.get(tags_url, headers=headers, timeout=20)
             if before.status_code != 200:
                 raise RuntimeError('Tag inventory unavailable')
             matches = [tag for tag in before.json().get('tags', []) if str(tag.get('name', '')).casefold() == name.casefold()]
             if len(matches) > 1:
-                raise RuntimeError('Dedicated approval tag is ambiguous')
+                raise RuntimeError('Workflow tag definition is ambiguous')
             if not matches:
                 created = transport.post(tags_url, headers=headers, json={'name': name}, timeout=20)
                 if created.status_code not in (200, 201):

@@ -124,6 +124,25 @@ def test_model_prompt_and_server_acceptance_share_the_reviewed_catalogue():
     assert "Untrusted candidate rank" not in result.answer.recommendations[0].rationale
 
 
+@pytest.mark.parametrize("question", ["recruiting?", "Can it be connected to recruiting?"])
+def test_short_recruiting_questions_receive_scoped_sdk_instruction_and_concrete_pilot(question):
+    requests = []
+    def parse(**kwargs):
+        requests.append(kwargs)
+        return SimpleNamespace(status="completed", usage=SimpleNamespace(input_tokens=1, output_tokens=1),
+                               output_parsed=answer(recommendations=[{"title": "Recruiter briefing assistant",
+                                                                     "rationale": "Untrusted", "source_ids": ["talent"]}]))
+    sdk = SimpleNamespace(responses=SimpleNamespace(parse=parse))
+    result = Advisor(Settings(), None, sdk).answer(SimpleNamespace(profile={"company_name": "Insight Global"},
+                                                 synthetic=False, sources=[STAFFING_SOURCE]), question, [])
+    assert "current question explicitly concerns recruiting" in requests[0]["instructions"]
+    assert "return claims=[]" in requests[0]["instructions"]
+    assert "can be adapted for recruiting" in result.answer.summary
+    assert "Python/FastAPI" in result.answer.recommendations[0].rationale
+    assert "Untrusted" not in result.answer.recommendations[0].rationale
+    assert "withheld" not in " ".join(result.answer.unknowns)
+
+
 def test_cost_uses_uncached_and_cached_rates_separately():
     settings = Settings(openai_input_rate="0.40", openai_cached_rate="0.10", openai_output_rate="1.60", price_reference="test fixture")
     assert estimate_cost(settings, 1000, 400, 200) == .0006

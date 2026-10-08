@@ -93,12 +93,8 @@ def setup_sql(session, client, credentials, target):
     base = f"https://sqladmin.googleapis.com/sql/v1beta4/projects/{target}/instances/{SQL_INSTANCE}"
     response = session.get(base, timeout=30)
     if response.status_code == 404:
-        # Reconcile an earlier accepted creation before retrying a potentially lost response.
-        operations = request(session, "GET", f"https://sqladmin.googleapis.com/sql/v1beta4/projects/{target}/operations",
-                             label="sql_operations_read").get("items", [])
-        pending = next((op for op in operations if op.get("targetId") == SQL_INSTANCE and op.get("status") != "DONE"), None)
-        if pending:
-            return {"status": "PENDING", "instance": SQL_INSTANCE, "operation": pending["name"], "iam_verified": True}
+        # A fixed instance ID prevents duplicate instances; conflicts fail closed.
+        # Cloud SQL operation listing is unavailable before that instance exists.
         operation = request(session, "POST", base.rsplit("/", 1)[0], label="sql_instance_create", json={
             "name": SQL_INSTANCE, "region": "us-central1", "databaseVersion": "POSTGRES_16",
             "settings": {"tier": "db-f1-micro", "edition": "ENTERPRISE", "availabilityType": "ZONAL",

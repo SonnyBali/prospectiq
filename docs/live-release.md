@@ -6,7 +6,7 @@ October 8, 2026 (Asia/Singapore). The owner-approved public recruiter demo is no
 
 The owner authorized publication of the v1.1 code and Markdown documentation to a public GitHub repository. Source preparation is distinct from image deployment and repository/tag publication. This public record excludes real contact details, private capability URLs, private exports and local verification artifacts.
 
-- [x] Full v1.1 suite: 212 pytest tests passed on Windows and in the rebuilt Linux image.
+- [x] Full v1.1 suite: 222 pytest tests passed on Windows (12.93 seconds) and in the rebuilt Linux image (12.06 seconds).
 - [x] Frontend private-entry/disclosure VM: 38 cases passed; JavaScript syntax passed.
 - [x] Analytics privacy VM: 346 assertions passed.
 - [x] Recruiter catalogue focused advisor/security tests and Ruff passed.
@@ -17,21 +17,27 @@ The owner authorized publication of the v1.1 code and Markdown documentation to 
 - [x] Canonical v1.1 request/completed usage independently matched in Cloud Logging.
 - [x] Two private dashboards: 18 HTTP checks and actual Chrome cited-advisor checks passed.
 - [x] Canonical OpenAPI returned HTTP 200 with version `1.1.0`.
-- [x] Pre-publication privacy audit: 70 files passed actual-secret/private-artifact comparisons with zero findings.
-- [ ] Public GitHub repository and v1.1 tag publication confirmed.
-- [ ] Actual GitHub CI run passed.
+- [x] Attribution iframe regression: seven new checks passed; actual Chrome showed eight Google Search suggestion links with no console errors/warnings.
+- [x] Dedicated-project Cloud Tasks OIDC → Vertex Google Search → OpenAI → Cloud SQL research completed; worker request/usage independently matched in Cloud Logging.
+- [x] Publication privacy audit: 74 candidate files, four actual source-project Secret Manager versions and seven private-artifact fingerprints, zero findings. Comparison against four actual target-project secret versions also produced zero findings.
+- [x] Public GitHub source published and anonymously accessible; initial CI run passed.
+- Versioned source/downloads: [v1.1.0 release](https://github.com/SonnyBali/prospectiq/releases/tag/v1.1.0). Check [Actions](https://github.com/SonnyBali/prospectiq/actions) for CI against the exact tag commit.
 
-The v1.1 image was published with immutable registry digest `sha256:a277ff5eda0b735c583836cd75d51d932e232b69073258077b550d1c441fc835`. Linux pytest passed all 212 tests in 17.24 seconds. Revision `prospectiq-00006-ksp` became Ready at `2026-10-08T14:43:29Z` and receives 100% traffic. Canonical OpenAPI returned HTTP 200 with version `1.1.0` at the 14:49 UTC checkpoint.
+The current immutable image manifest is `sha256:1edf72400d13eabf7377539c78019027de5997be8fdad049a1eb5d1202c3d2b7`. The canonical hostname still serves project `ai-leadscore/us-central1`, Ready revision `prospectiq-00007-n2g`, with 100% traffic. Canonical OpenAPI returned HTTP 200/version `1.1.0` at the 14:49 UTC checkpoint. The earlier v1.1 image/revision `prospectiq-00006-ksp` passed 212 tests before the subsequent attribution/recruiting fixes; those counts are historical.
 
-Canonical v1.1 smoke passed 25 HTTP checks. Actual synthetic OpenAI request `e5b6b07d9113434aa233e8299c4cc952` reported 1,659 input / 247 output tokens and estimate `$0.0010588`. The authoritative Python scenario remained `$10,800` monthly, `$129,600` annual and nine expected customers. SQL history/traces, session cookies, privacy and logout passed. Independent Cloud Logging matched completed OpenAI usage and HTTP 200 in 3,418.88 ms on revision `prospectiq-00006-ksp`, event timestamp `2026-10-08T14:44:12.617159Z`.
+The post-fix canonical smoke passed 25 HTTP checks with actual synthetic OpenAI request `d1b7b6eda1954bb4a3b2d19ac5746012`, 1,686 input / 338 output tokens and estimate `$0.0012152`. Python remains the numerical authority; SQL history/traces, session cookies, privacy and logout passed. The earlier v1.1 request `e5b6b07d9113434aa233e8299c4cc952` independently matched Cloud Logging on revision `prospectiq-00006-ksp` at `2026-10-08T14:44:12.617159Z`, HTTP 200, 3,418.88 ms, 1,659 input / 247 output tokens and estimate `$0.0010588`.
 
-Two private dashboards passed 18 HTTP checks, including cached public research/Google attribution, client-ID/cookie binding, wrong-ID rejection, query-only unauthorized access and private CSP/tracking isolation. The check observed 14 retained public sources. An actual Chrome private advisor returned cited recruiter-briefing/candidate-scheduling hypotheses, 4,316 input / 513 output tokens and UI estimate `$0.002547`. No client names, contact details, prospect identifiers or private capability URLs are included in this record.
+Two private dashboards again passed 18 HTTP checks, including cached public research/Google attribution, client-ID/cookie binding, wrong-ID rejection, query-only unauthorized access and private CSP/tracking isolation. The earlier source check observed 14 retained public sources. The corrected attribution iframe now retains its same origin while sandbox and response CSP block scripts; actual Chrome displayed eight Search suggestion links with zero console errors/warnings. Other private responses retain denied framing and strict marketing isolation.
 
-The dedicated native HighLevel global trigger link's exact contact-field target and four project tags passed direct API readback HTTP 200; tags were not assigned to contacts by that verification. The requested 30-minute email/SMS workflow is saved as a draft, not operational. Configuration readback does not establish per-recipient redirect or delivered follow-up.
+The actual recruiting question “Can it be connected to recruiting?” returned a direct cited Python/FastAPI recruiter-briefing proposal, without unrelated numbers or a withheld-content warning. Request `0a9b20d18920483d826fa8087c38e1cf` independently matched completed Cloud Logging usage and HTTP 200 on `prospectiq-00007-n2g` at `2026-10-08T15:03:55.637294Z`: 10,752.48 ms, 4,855 input / 333 output tokens, estimated `$0.0024748`. This verifies an advisory proposal, not a deployed recruiting integration. No client names, contact details, prospect identifiers or private capability URLs are included in this record.
 
-The public [SonnyBali/prospectiq](https://github.com/SonnyBali/prospectiq) repository is created; source push, version tag and remote CI remain unverified. Creation of an empty repository does not establish source publication.
+The dedicated native HighLevel global trigger link's exact contact-field target and four project tags passed direct API readback HTTP 200; tags were not assigned to contacts by that verification. The native 30-minute feedback workflow was saved and reopened as a draft with four templates, independent Spanish handling and email/SMS permission gates; loop paths were removed and terminal paths limit each channel to one message. Publish is OFF. Global DND/frequency policy, replies during the wait, Sunday handling, send-boundary behavior and delivery remain unresolved. Configuration/draft readback does not establish per-recipient redirect or delivered follow-up.
 
-The live service remains in Google project `ai-leadscore`, region `us-central1`. Preparation in `firewireads-platform` is underway; there is no completed serving migration established in this checkpoint. [Release notes](../RELEASE_NOTES_v1.1.md) describe the new source behavior. The browser/HTTP proof below is preserved historical evidence from the earlier image.
+The public [SonnyBali/prospectiq](https://github.com/SonnyBali/prospectiq) source is anonymously accessible. Initial commit `d731821b25859e2ee2be1d5830fefe5cb64e970b` passed [GitHub CI run 37796011001](https://github.com/SonnyBali/prospectiq/actions/runs/37796011001). Versioned files are linked from [v1.1.0](https://github.com/SonnyBali/prospectiq/releases/tag/v1.1.0); consult [Actions](https://github.com/SonnyBali/prospectiq/actions) for the exact tag commit's result.
+
+The separate `firewireads-platform` project (display name FireWireAds Platform) has verified billing linkage, 13 enabled APIs, four named credential copies checked in memory, a fresh Secret Manager database password, scoped runtime grants and a RUNNABLE PostgreSQL 16 database. An actual connector `SELECT 1` passed. The native target [public synthetic demo](https://prospectiq-504110803281.us-central1.run.app/) serves Ready revision `prospectiq-00003-tdc`, 100% traffic, Ready transition `2026-10-08T15:23:03Z`, using the same image manifest above. Strict health returned HTTP 200, SQL connected and OpenAI mode. Target native smoke passed 25 HTTP checks on `prospectiq-00001-vt5`; request `8d5ff5c0a762445cbab57ad290b94651` reported 1,686 input / 419 output tokens, estimate `$0.0013448`, and independently matched Cloud Logging.
+
+An approved public FireWireAds research job completed the actual Cloud Tasks OIDC → Vertex Google Search → OpenAI → Cloud SQL cache flow with eight sources, retained Google attribution and cached intelligence. Independent Cloud Logging matched worker request `51ddd9d392bf4be3b42863518d6f8f4f` on target revision `prospectiq-00002-9mk` at `2026-10-08T15:22:24.813465Z`: `/api/internal/research` HTTP 200, 25,139.28 ms; completed `gpt-4.1-mini` usage 2,888 input / 416 output / zero cached tokens, estimate `$0.0018208`. The test had no CRM contact, issued no access link and sent no outreach. Target `ALLOW_CLOUD_TASKS=true`; `ALLOW_CRM_LINKS=false` until canonical-domain/database migration. The branded hostname and its existing database remain on the original project. [Release notes](../RELEASE_NOTES_v1.1.md) describe the source behavior. The following pre-v1.1 evidence is historical.
 
 ## Verified serving release before v1.1
 
@@ -75,7 +81,7 @@ Canonical Chrome resource observations included GA4 `g/collect` with `tid=G-6JM9
 
 ## Deployment configuration
 
-The target is an isolated public portfolio demonstration in Google Cloud project `ai-leadscore`, region `us-central1`:
+The canonical service's isolated portfolio configuration is in Google Cloud project `ai-leadscore`, region `us-central1`; the new project's current serving/research evidence is recorded above:
 
 - Cloud Run: one CPU, 1 GiB memory, concurrency four, minimum zero instances and maximum one instance.
 - Cloud SQL: PostgreSQL 16, Enterprise edition, shared-core `db-f1-micro`, zonal availability and 10 GB SSD storage. Backups are configured for 18:00 UTC with seven retained backups; deletion protection is enabled. Connections require encryption and no authorized-network entries were configured. The Python connector supplies the authenticated encrypted connection.
@@ -101,10 +107,10 @@ The public dashboard uses a fictional company and clearly marked synthetic resea
 
 The requested marketing tags are included for the public synthetic dashboard only, behind an explicit tracking control. Their canonical-host SDK/page-view requests were observed in Chrome. Private prospect pages, noncanonical hosts, URLs with query strings and private access fragments block marketing loading. Canonical-host checks guard the relaxed public-page CSP; private/API/local/direct Cloud Run responses retain strict policies. Account-side ingestion remains unverified. Chat prompts, simulator values, contact profiles and private capability URLs are excluded from marketing events.
 
-Cloud Tasks dispatch, live CRM task delivery, customer outreach, calendar booking and live voice interactions remain disabled for this release. The existing receptionist recording is available for playback. Sales and appointment agent integrations require an isolated provider demonstration and separate verification. GitHub CI exists in source; no GitHub push or remote CI execution is part of this checkpoint.
+Cloud Tasks research dispatch and completion are verified in the separate `firewireads-platform` deployment described above. The canonical service's research dispatch has not been established by that test. Live CRM task delivery, customer outreach, calendar booking and live voice remain disabled or unverified. The existing receptionist recording is available for playback. Sales and appointment agents require an isolated provider demonstration and separate verification. Public source and the initial remote CI run are verified. Versioned files are linked from v1.1.0; Actions records the CI result for each exact commit.
 
 ## Remaining operational boundaries
 
-Cloud Tasks research dispatch, live HighLevel delivery, isolated voice-agent audio and GitHub CI execution remain unverified and disabled or unexecuted. Third-party browser tracking requests are verified; account dashboard reporting and attribution remain unverified. The application release above does not imply those separate integrations are operational.
+Canonical-domain/database migration to the new project, native HighLevel recipient redirect and delivered timed follow-up, live internal-task delivery, isolated voice-agent audio and latest-fix/tag publication remain separate checkpoints. The new project's verified queue/worker flow does not imply CRM enrollment or outreach. Third-party browser tracking requests are verified; account dashboard reporting and attribution remain unverified.
 
 Branded dashboard and stored advisor conversation were visually reviewed after the canonical chat/history/Engineering checks. Public evidence is the redacted request/usage and resource readback above; local browser artifacts are excluded from repository publication.

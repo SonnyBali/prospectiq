@@ -21,9 +21,11 @@ import httpx
 
 CANONICAL_ORIGIN = "https://prospect.firewireads.com"
 NATIVE_DEMO_ORIGIN = "https://prospectiq-s4gztnjt6a-uc.a.run.app"
+FIREWIRE_NATIVE_ORIGIN = "https://prospectiq-504110803281.us-central1.run.app"
 APPROVED_ORIGINS = {
     CANONICAL_ORIGIN,
     NATIVE_DEMO_ORIGIN,
+    FIREWIRE_NATIVE_ORIGIN,
     "https://prospectiq-1051896753015.us-central1.run.app",
 }
 
@@ -51,7 +53,7 @@ def smoke(base_url=CANONICAL_ORIGIN, origin=CANONICAL_ORIGIN, *, allow_paid=Fals
     require(allow_paid is True, "explicit_paid_synthetic_chat_opt_in_required")
     base_url = approved_origin(base_url)
     origin = approved_origin(origin)
-    require(origin in {CANONICAL_ORIGIN, NATIVE_DEMO_ORIGIN}, "browser_origin_not_explicitly_approved")
+    require(origin in {CANONICAL_ORIGIN, NATIVE_DEMO_ORIGIN, FIREWIRE_NATIVE_ORIGIN}, "browser_origin_not_explicitly_approved")
     checks = {}
     http_checks = 0
     chat_requests = 0

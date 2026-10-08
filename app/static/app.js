@@ -631,7 +631,7 @@ async function sendChat(message) {
     appendMessage("assistant", "", {
       label: modelLabel,
       structured: response.answer || { summary: "The server did not return an advisor answer." },
-      scenario: body.scenario ? response.scenario : null,
+      scenario: body.scenario && response.scenario_explanation_included === true ? response.scenario : null,
       responseMeta: `Request ${displayText(response.request_id, "unavailable")} · ${usage}`,
     });
     $("chat-usage").textContent = `${humanize(responseProvider)} · ${usage}`;
@@ -797,7 +797,8 @@ function renderSession(session) {
     const frame = el("iframe", "research-attribution-frame");
     frame.src = "/api/research-attribution";
     frame.title = "Google Search grounding attribution";
-    frame.setAttribute("sandbox", "allow-popups allow-popups-to-escape-sandbox");
+      // Preserve the response origin for SAMEORIGIN framing; sandbox and CSP still block scripts.
+      frame.setAttribute("sandbox", "allow-same-origin allow-popups allow-popups-to-escape-sandbox");
     frame.loading = "lazy";
     attribution.append(frame);
   }

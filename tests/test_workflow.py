@@ -33,6 +33,17 @@ def test_csrf_and_origin_are_enforced(client, csrf):
     assert client.post("/api/simulate", headers=csrf, json={"missed_rate": 9}).status_code == 422
 
 
+def test_chat_only_explains_numbers_when_requested_and_keeps_calculation_unchanged(client, csrf):
+    defaults = client.get("/api/demo").json()["simulator_defaults"]
+    for question, explain in [("Can it be connected to recruiting?", False), ("Explain my calculated scenario", True)]:
+        response = client.post("/api/chat", headers=csrf, json={"message": question, "scenario": defaults})
+        assert response.status_code == 200
+        body = response.json()
+        assert body["scenario_explanation_included"] is explain
+        assert body["scenario"]["results"]["monthly_revenue"] == 8100
+        assert ("Under your assumptions, Python calculates" in body["answer"]["summary"]) is explain
+
+
 def test_session_cookie_is_httponly_and_no_cache(client):
     response = client.get("/api/demo")
     assert "HttpOnly" in response.headers["set-cookie"]

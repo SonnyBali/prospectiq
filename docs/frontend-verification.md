@@ -2,7 +2,13 @@
 
 This document records canonical, native-origin and earlier local Chrome checks on October 8, 2026. The public dashboard used the fictional Copperline Home Services dataset throughout. Current release status is in [live-release.md](live-release.md); account-side analytics reporting remains separate from observed browser requests.
 
-Cloud Run is ready, Cloud SQL connector/schema and deployed chat/history/draft persistence are verified, and deployed request/usage logs were read from Cloud Logging. The serving release recorded below passed 123 pytest tests on Windows/Linux, including 28 origin-security checks, Ruff, JavaScript syntax and 298 analytics privacy assertions. Canonical and native same-origin backend checks each passed 25 checks with real synthetic OpenAI and independently matched Cloud Logging usage. Static/SEO/private-noindex/CSP checks are verified. Current v1.1 source/image/revision checkpoints are tracked separately in [live-release.md](live-release.md).
+Cloud Run is ready, Cloud SQL connector/schema and deployed chat/history/draft persistence are verified, and deployed request/usage logs were read from Cloud Logging. Current v1.1 source/image checks passed 222 pytest tests on Windows/Linux, 38 private-entry/disclosure VM cases and 346 analytics privacy assertions. Ruff and JavaScript syntax passed. The earlier public-browser release below had 123 tests/298 assertions; current revision and image are recorded in [live-release.md](live-release.md).
+
+## Version 1.1 private-browser fixes
+
+Two private dashboards again passed 18 HTTP checks of cached research, client-bound cookies, wrong-ID rejection, query-only unauthorized access and strict private tracking isolation. Actual Chrome private exchange/reload and cited advisor checks are verified without publishing capabilities or client details. The Google attribution iframe now includes `allow-same-origin` so its existing authenticated SAMEORIGIN framing policy works. Sandbox and response CSP continue to block scripts. Seven security regressions passed; actual Chrome displayed eight Google Search suggestion links with no errors/warnings.
+
+The recruiting question returned a direct cited Python/FastAPI recruiter-briefing proposal without unrelated scenario numbers or a withheld-content warning. Its completed request/usage independently matched Cloud Logging on canonical revision `prospectiq-00007-n2g`; exact redacted evidence is in [verification.md](verification.md). This is an advisory proposal, not a deployed recruiting integration.
 
 ## Verified canonical recruiter demonstration
 
@@ -44,11 +50,8 @@ The native dashboard and stored conversation were visually reviewed. Exact servi
 
 ## Browser checks still pending
 
-- The private dashboard token exchange, token-fragment removal, and cookie-based page-refresh recovery. Backend tests cover the corresponding authorization behavior; this frontend check did not open a real prospect link.
-- Google Search grounding attribution in a sandboxed authenticated iframe. No real research attribution fixture was displayed during these browser checks.
-- Session-history retrieval after a fresh page reload.
 - Isolated live browser and call demonstrations. The browser adapter opens only after a user click, requires server-enabled configuration, rejects the dashboard's own origin, and loads a separate-origin `browser_url`. Production agents remained blocked. No microphone permission, live provider session, or telephone call was initiated.
 - Account-side Google/Meta receipt and reporting. Observed canonical browser page-view requests establish network loading, not downstream analytics reporting.
-- Live Cloud Tasks worker execution and isolated voice/CRM delivery remain disabled or untested. Cloud Run, Cloud SQL persistence and Cloud Logging have separate deployed backend evidence in [live-release.md](live-release.md); they are not gaps in the current infrastructure checkpoint.
+- Isolated voice/CRM delivery remains disabled or untested. The dedicated project's live Cloud Tasks/Google/OpenAI/SQL worker execution has separate verified backend evidence in [live-release.md](live-release.md); it did not issue access or send outreach. Canonical-domain/database migration remains a separate checkpoint.
 
 The UI has a distinct provider badge for guided versus OpenAI mode. Provider credentials remain outside the frontend. All dynamic research and advisor text is rendered through text nodes; evidence links require HTTPS, and external links use `noopener noreferrer`.

@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import and_, func, or_, select, text, update
 from starlette.concurrency import run_in_threadpool
 
-from .advisor import Advisor
+from .advisor import Advisor, scenario_question
 from .config import Settings
 from .db import AccessLink, BrowserSession, FollowUp, Message, Prospect, RequestTrace, Usage, database, now
 from .demo import DEMO_ID, seed_demo, voice_agents
@@ -338,7 +338,8 @@ def create_app(settings=None, secret_store=None, advisor=None):
         history = list(reversed(db.scalars(select(Message).where(Message.session_id == current.id).order_by(Message.created_at.desc()).limit(12)).all()))
         scenario = calculate(payload.scenario) if payload.scenario else None
         result = run_advisor(db, request, prospect, payload.message, [{"role": m.role, "content": m.content} for m in history], scenario, current=current)
-        if scenario:
+        explain_scenario = bool(scenario and scenario_question(payload.message))
+        if explain_scenario:
             values = scenario["results"]
             result.answer.summary += (f" Under your assumptions, Python calculates {values['new_customers']:g} expected customers, "
                                       f"${values['monthly_revenue']:,.2f} monthly revenue opportunity, "
@@ -351,7 +352,7 @@ def create_app(settings=None, secret_store=None, advisor=None):
         used = {id_ for c in result.answer.claims for id_ in c.source_ids} | {id_ for r in result.answer.recommendations for id_ in r.source_ids}
         return {"answer": result.answer.model_dump(), "citations": [s for s in prospect.sources if s["id"] in used],
                 "provider": result.provider, "usage": result.usage, "request_id": request.state.request_id,
-                "scenario": scenario}
+                "scenario": scenario, "scenario_explanation_included": explain_scenario}
 
     @app.get("/api/history")
     def history(current=Depends(session), db=Depends(db_session)):

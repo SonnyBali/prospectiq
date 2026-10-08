@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse
 import copy
 import json
+import os
+import re
 import sys
 from collections.abc import Callable
 
@@ -23,8 +25,6 @@ PROJECT = "ai-leadscore"
 REGION = "us-central1"
 QUEUE = "prospectiq-research"
 SERVICE = "prospectiq"
-RUNTIME = f"prospectiq-runtime@{PROJECT}.iam.gserviceaccount.com"
-DISPATCH = f"prospectiq-research-dispatch@{PROJECT}.iam.gserviceaccount.com"
 SCOPES = ["https://www.googleapis.com/auth/cloud-platform"]
 # Queue/IAM RPCs reject deadlines above 30 seconds. Leave clock/transport
 # headroom rather than putting the SDK deadline exactly at that ceiling.
@@ -91,17 +91,35 @@ def rest_policy(session, base, *, project=False, service_account=False, missing=
     return read, write
 
 
-def provision(apply=False):
-    credentials, _ = google.auth.default(scopes=SCOPES)
+def provision(apply=False, project_id=PROJECT, expected_account="", use_verified_cli_identity=False,
+              defer_run_invoker=False):
+    if project_id != PROJECT and not re.fullmatch(r"firewireads-[a-z0-9-]{6,18}[a-z0-9]", project_id):
+        raise ProvisionError("Explicit target must be the original project or a dedicated firewireads- project")
+    if project_id != PROJECT and not (expected_account and use_verified_cli_identity):
+        raise ProvisionError("New target requires --expected-account and --use-verified-cli-identity")
+    if expected_account or use_verified_cli_identity:
+        from provision_firewire_project import verify_identity
+        if not expected_account:
+            raise ProvisionError("Supply --expected-account or FIREWIRE_GCP_EXPECTED_ACCOUNT locally")
+        credentials, _, _ = verify_identity(use_verified_cli_identity, expected_account.strip().lower())
+    else:
+        credentials, _ = google.auth.default(scopes=SCOPES)
+    runtime_email = f"prospectiq-runtime@{project_id}.iam.gserviceaccount.com"
+    dispatch_email = f"prospectiq-research-dispatch@{project_id}.iam.gserviceaccount.com"
     client = tasks_v2.CloudTasksClient(credentials=credentials)
-    queue_name = client.queue_path(PROJECT, REGION, QUEUE)
+    queue_name = client.queue_path(project_id, REGION, QUEUE)
     reports = []
     with AuthorizedSession(credentials) as session:
-        project_base = f"https://cloudresourcemanager.googleapis.com/v1/projects/{PROJECT}"
+        project_base = f"https://cloudresourcemanager.googleapis.com/v1/projects/{project_id}"
         project = request_json(session, "GET", project_base, label="project_read")
         project_number = project.get("projectNumber")
-        if not project_number or project.get("projectId") != PROJECT:
+        if not project_number or project.get("projectId") != project_id:
             raise ProvisionError("project_read: unexpected project identity")
+        if project_id != PROJECT:
+            from provision_firewire_project import verify_owned_project
+            target = request_json(session, "GET", f"https://cloudresourcemanager.googleapis.com/v3/projects/{project_id}",
+                                  label="target_identity_read")
+            verify_owned_project(session, project_id, target, expected_account.strip().lower())
         for api in ("cloudtasks.googleapis.com", "aiplatform.googleapis.com", "iam.googleapis.com", "run.googleapis.com"):
             state = request_json(session, "GET",
                                  f"https://serviceusage.googleapis.com/v1/projects/{project_number}/services/{api}",
@@ -109,13 +127,13 @@ def provision(apply=False):
             reports.append({"api": api, "state": state.get("state")})
             if state.get("state") != "ENABLED":
                 raise ProvisionError(f"{api}: API must be enabled separately before provisioning")
-        iam_base = f"https://iam.googleapis.com/v1/projects/{PROJECT}/serviceAccounts"
-        runtime_state = request_json(session, "GET", f"{iam_base}/{RUNTIME}", label="runtime_read")
+        iam_base = f"https://iam.googleapis.com/v1/projects/{project_id}/serviceAccounts"
+        runtime_state = request_json(session, "GET", f"{iam_base}/{runtime_email}", label="runtime_read")
         if runtime_state.get("disabled"):
             raise ProvisionError("runtime_read: dedicated runtime account is disabled")
-        run_base = f"https://run.googleapis.com/v2/projects/{PROJECT}/locations/{REGION}/services/{SERVICE}"
-        request_json(session, "GET", run_base, label="run_read")
-        dispatch_state = request_json(session, "GET", f"{iam_base}/{DISPATCH}",
+        run_base = f"https://run.googleapis.com/v2/projects/{project_id}/locations/{REGION}/services/{SERVICE}"
+        run_state = request_json(session, "GET", run_base, label="run_read", missing_ok=defer_run_invoker)
+        dispatch_state = request_json(session, "GET", f"{iam_base}/{dispatch_email}",
                                       label="dispatch_read", missing_ok=True)
         if dispatch_state and dispatch_state.get("disabled"):
             raise ProvisionError("dispatch_read: dedicated dispatch account is disabled")
@@ -123,8 +141,8 @@ def provision(apply=False):
             request_json(session, "POST", iam_base, label="dispatch_create",
                          json={"accountId": "prospectiq-research-dispatch",
                                "serviceAccount": {"displayName": "ProspectIQ research task dispatch"}})
-            request_json(session, "GET", f"{iam_base}/{DISPATCH}", label="dispatch_readback")
-        reports.append({"service_account": DISPATCH,
+            request_json(session, "GET", f"{iam_base}/{dispatch_email}", label="dispatch_readback")
+        reports.append({"service_account": dispatch_email,
                         "status": "existing" if dispatch_state else "created_verified" if apply else "planned"})
         try:
             queue = client.get_queue(name=queue_name, timeout=TASKS_RPC_TIMEOUT)
@@ -133,7 +151,7 @@ def provision(apply=False):
             queue, queue_present = None, False
         if not queue_present and apply:
             try:
-                client.create_queue(parent=client.common_location_path(PROJECT, REGION), queue={
+                client.create_queue(parent=client.common_location_path(project_id, REGION), queue={
                     "name": queue_name,
                     "rate_limits": {"max_dispatches_per_second": 1, "max_concurrent_dispatches": 1},
                     "retry_config": {"max_attempts": 3, "min_backoff": {"seconds": 10},
@@ -157,40 +175,51 @@ def provision(apply=False):
             client.set_iam_policy(request={"resource": queue_name,
                                            "policy": ParseDict(policy, policy_pb2.Policy())}, timeout=TASKS_RPC_TIMEOUT)
 
-        runtime_member, dispatch_member = f"serviceAccount:{RUNTIME}", f"serviceAccount:{DISPATCH}"
+        runtime_member, dispatch_member = f"serviceAccount:{runtime_email}", f"serviceAccount:{dispatch_email}"
         agent_member = f"serviceAccount:service-{project_number}@gcp-sa-cloudtasks.iam.gserviceaccount.com"
         ensure_grant(queue_policy_read, queue_policy_write, "roles/cloudtasks.enqueuer", runtime_member,
                      queue_name, apply, reports)
-        dispatch_policy = rest_policy(session, f"{iam_base}/{DISPATCH}", service_account=True,
+        dispatch_policy = rest_policy(session, f"{iam_base}/{dispatch_email}", service_account=True,
                                       missing=not apply and not dispatch_state)
-        ensure_grant(*dispatch_policy, "roles/iam.serviceAccountUser", runtime_member, DISPATCH, apply, reports)
+        ensure_grant(*dispatch_policy, "roles/iam.serviceAccountUser", runtime_member, dispatch_email, apply, reports)
         # Current official HTTP-task guide also requires the primary Tasks agent to actAs this identity.
-        ensure_grant(*dispatch_policy, "roles/iam.serviceAccountUser", agent_member, DISPATCH, apply, reports)
-        ensure_grant(*rest_policy(session, run_base), "roles/run.invoker", dispatch_member,
-                     f"CloudRun/{SERVICE}", apply, reports)
+        ensure_grant(*dispatch_policy, "roles/iam.serviceAccountUser", agent_member, dispatch_email, apply, reports)
+        if defer_run_invoker:
+            reports.append({"resource": f"CloudRun/{SERVICE}", "role": "roles/run.invoker",
+                            "member": dispatch_member, "status": "deferred_operator",
+                            "service_exists": bool(run_state)})
+        else:
+            ensure_grant(*rest_policy(session, run_base), "roles/run.invoker", dispatch_member,
+                         f"CloudRun/{SERVICE}", apply, reports)
         project_policy = rest_policy(session, project_base, project=True)
-        ensure_grant(*project_policy, "roles/aiplatform.user", runtime_member, PROJECT, apply, reports)
+        ensure_grant(*project_policy, "roles/aiplatform.user", runtime_member, project_id, apply, reports)
         # The normal Tasks service-agent role already grants getOpenIdToken; avoid redundant TokenCreator.
         agent_has_tokens = has_grant(project_policy[0](), "roles/cloudtasks.serviceAgent", agent_member)
         if not agent_has_tokens:
             ensure_grant(*dispatch_policy, "roles/iam.serviceAccountTokenCreator", agent_member,
-                         DISPATCH, apply, reports)
+                         dispatch_email, apply, reports)
         else:
-            reports.append({"resource": DISPATCH, "role": "roles/iam.serviceAccountTokenCreator",
+            reports.append({"resource": dispatch_email, "role": "roles/iam.serviceAccountTokenCreator",
                             "member": agent_member, "status": "unneeded_existing_tasks_service_agent_role"})
-    return {"project": PROJECT, "mode": "apply" if apply else "read_only_plan", "resources": reports,
+    return {"project": project_id, "mode": "apply" if apply else "read_only_plan", "resources": reports,
             "tasks_enqueued": 0, "models_invoked": 0, "secrets_read": 0,
             "queue_running": bool(queue is not None and queue.state == tasks_v2.Queue.State.RUNNING),
-            "iam_bindings_verified": bool(apply),
+            "iam_bindings_verified": bool(apply and not defer_run_invoker),
+            "prepared_bindings_verified": bool(apply), "run_invoker_deferred": defer_run_invoker,
             "integration_tested": False}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--apply", action="store_true", help="Apply scoped changes only after owner authorization")
+    parser.add_argument("--project", default=PROJECT, help="Original project by default; explicit dedicated FireWireAds target")
+    parser.add_argument("--expected-account", default=os.getenv("FIREWIRE_GCP_EXPECTED_ACCOUNT", ""))
+    parser.add_argument("--use-verified-cli-identity", action="store_true")
+    parser.add_argument("--defer-run-invoker", action="store_true", help="Prepare infrastructure without any Cloud Run IAM write")
     args = parser.parse_args()
     try:
-        print(json.dumps(provision(args.apply)))
+        print(json.dumps(provision(args.apply, args.project, args.expected_account,
+                                   args.use_verified_cli_identity, args.defer_run_invoker)))
     except ProvisionError as error:
         print(json.dumps({"status": "failed", "error": str(error)}))
         return 1

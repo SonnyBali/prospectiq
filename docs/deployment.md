@@ -2,17 +2,17 @@
 
 The owner approved the dedicated ProspectIQ cloud release on October 8, 2026. Cloud Run and Cloud SQL are deployed in `ai-leadscore/us-central1` and their backend workflow was verified. Exact serving revision, traffic, immutable image and subsequent image publications are maintained in [live-release.md](live-release.md). **[The primary recruiter demo is live](https://prospect.firewireads.com/):** DNS/TLS, strict HTTPS health, Chrome dashboard/simulator/real OpenAI chat and Google/Facebook page-view network requests are verified. Account-side analytics receipt/reporting remains untested.
 
-Cloud Tasks dispatch, live CRM delivery, customer outreach, bookings and live voice remain disabled. Their adapters and deployment outlines below describe subsequent scoped work, not completed integrations. CI contains verification/build and localhost container checks only; no GitHub push or remote CI run has occurred.
+The dedicated `firewireads-platform` deployment is also Ready at [its native synthetic demo URL](https://prospectiq-504110803281.us-central1.run.app/), revision `prospectiq-00003-tdc`, 100% traffic. Its actual Cloud Tasks OIDC → Vertex Google Search → OpenAI → SQL cache flow completed and independently matched worker logs. The branded hostname/data have not migrated from `ai-leadscore`; target CRM link writes remain disabled. Live CRM delivery, outreach, bookings and live voice remain unverified. Public source and the initial remote CI run are verified; versioned files and per-commit CI pointers are in the release record.
 
 ## Isolated resources and current boundaries
 
 | Resource | Use | Current checkpoint |
 | --- | --- | --- |
 | Cloud Run `prospectiq` | Public synthetic demo and capability-protected prospect/dashboard/admin API | Ready service; strict HTTPS health at the service URL returns SQL connected and OpenAI mode. Exact serving revision/traffic/image are in the release record |
-| Cloud Run `prospectiq-research` | Separate private worker with authenticated research route | Not part of the verified release; live dispatch remains disabled |
+| Authenticated research route | `/api/internal/research`, with OIDC identity validation | Actual target-project Tasks dispatch and completion verified; a separate `prospectiq-research` service remains an optional deployment layout |
 | Cloud SQL PostgreSQL `prospectiq-db` | Dedicated durable tables with encrypted connector connections and backups | SQL Admin API enabled; PostgreSQL 16 `db-f1-micro` is `RUNNABLE`; database/user `prospectiq`, connector/schema and deployed persistence verified |
-| Cloud Tasks research queue | Dedicated queue, bounded retry/backoff and dispatch concurrency | Enqueue/dispatch disabled and untested for this release; unrelated Heights queue is excluded |
-| Runtime/service identities | Dedicated dashboard identity; separate worker/task callers when enabled | Dashboard identity's Cloud SQL Client and named-secret access verified; worker/task chain remains unverified |
+| Cloud Tasks research queue | Dedicated queue, bounded retry/backoff and dispatch concurrency | Target-project enqueue/OIDC/worker/Google/OpenAI/SQL chain passed; canonical-project dispatch not established by this test |
+| Runtime/service identities | Dedicated runtime/task callers | Cloud SQL/named-secret access and target task caller's service-scoped invocation verified; actual OIDC worker request completed |
 | Dedicated administrative/database secrets | Administrative capability and DB password | Provisioned through the Secret Manager SDK; values stay server-side and out of source/command arguments |
 | Existing secret `OPENAI_API_KEY` | Server-side Responses credential, scoped Secret Accessor | Actual deployed OpenAI and scoped runtime secret access verified |
 | Existing FireWire CRM secrets | Tenant/cohort contact reads and optionally internal review-task delivery | Reads verified; writes disabled/unverified |
@@ -32,7 +32,7 @@ docker run --detach --name prospectiq-local-demo --publish 127.0.0.1:8093:8080 -
 .venv/Scripts/python.exe scripts/smoke_http.py --base-url http://127.0.0.1:8093
 ```
 
-Earlier development check, October 8, 2026, with Docker Engine 29.2.1, Linux x86_64: the initial image built and `prospectiq-local-demo` served the guided synthetic dashboard at `http://127.0.0.1:8093`. The HTTP smoke passed 25 checks with zero provider calls; the then-current 85 pytest tests passed inside that image with the test directory mounted read-only. Runtime UID 10001, dependency consistency and loopback-only binding were verified. No host credentials were mounted. Latest source/built-image checks subsequently passed 123 pytest tests on both Windows and Linux, including 28 additional origin-security tests, Ruff, JavaScript syntax and 298 analytics privacy assertions. Build verification is distinct from ready deployment traffic.
+Earlier development check, October 8, 2026, with Docker Engine 29.2.1, Linux x86_64: the initial image built and `prospectiq-local-demo` served the guided synthetic dashboard at `http://127.0.0.1:8093`. The HTTP smoke passed 25 checks with zero provider calls; the then-current 85 pytest tests passed inside that image with the test directory mounted read-only. Runtime UID 10001, dependency consistency and loopback-only binding were verified. No host credentials were mounted. The current source/image passed 222 pytest tests on Windows/Linux, Ruff, JavaScript syntax, 38 private-entry VM cases and 346 analytics privacy assertions. Build verification is distinct from ready deployment traffic.
 
 ## Optional recruiter demo origin
 
@@ -48,7 +48,7 @@ The image excludes local databases, `.env`, tests/artifacts and credentials, use
 
 The v1.1 client-link/disclosure extension is deployed and verified: `/p?client=<nonsecret-id>#<secret-token>`, client-bound reloads and private root-query CSP/noindex/tracking isolation. The fragment never enters the initial ingress request URL. Two private dashboards passed 18 HTTP checks and Chrome cited-advisor checks with cached real public research/Google attribution. The dedicated HighLevel trigger target/project tags passed direct API readback; per-recipient redirect remains unverified and the click→30-minute human email/SMS workflow is saved as a draft. See [client-links.md](client-links.md) for the contract and sequence. Native communications remain separate from implementation-plan drafts and the internal review-task delivery gate. The serving project remains `ai-leadscore`; `firewireads-platform` preparation is not a completed migration.
 
-The main release has completed the database/runtime/secret provisioning described below. The worker/queue/IAM steps remain instructions for a separately verified research dispatch chain; executing a placeholder command is not part of the current release evidence.
+Both projects' database/runtime/secret provisioning is verified. The dedicated project also has a completed task/worker research test. The following configuration outline is a reproduction guide, not an instruction to change either deployment or migrate existing data. Target `ALLOW_CLOUD_TASKS=true` and `ALLOW_CRM_LINKS=false`; preserve the CRM gate until canonical-domain/database migration is separately verified.
 
 1. Enable only the approved required APIs: Cloud Run, Cloud Build/Artifact Registry if building remotely, Cloud Tasks, Cloud SQL Admin, Secret Manager, Vertex AI and Cloud Logging.
 2. Provision a dedicated PostgreSQL instance/database/user and backup policy. Store its password in Secret Manager. Grant runtime `Cloud SQL Client` and access only to the required named secrets. Use VPC egress/private IP as appropriate; `PROSPECTIQ_SQL_PRIVATE_IP=true` selects connector private IP and still requires network connectivity.
@@ -62,11 +62,11 @@ A command outline for an approved container deployment is below. Substitute owne
 ```powershell
 # Main service outline; substitute reviewed values, never credential values.
 gcloud run deploy prospectiq --project APPROVED_PROJECT --region APPROVED_REGION --image APPROVED_IMAGE --service-account APPROVED_RUNTIME_IDENTITY --allow-unauthenticated --cpu 1 --memory 1Gi --max-instances 1 --concurrency 4 --timeout 300 --set-env-vars APPROVED_NON_SECRET_CONFIGURATION
-# Separate worker outline; live dispatch remains disabled in the current release.
+# Optional separate private worker layout; the verified target currently uses its authenticated research route.
 gcloud run deploy prospectiq-research --project APPROVED_PROJECT --region APPROVED_REGION --image APPROVED_IMAGE --service-account APPROVED_RESEARCH_IDENTITY --no-allow-unauthenticated --max-instances 1 --concurrency 1 --timeout 300 --set-env-vars APPROVED_NON_SECRET_CONFIGURATION
 ```
 
-Secret values are not environment arguments here. `SecretStore` fetches values by configured names with runtime IAM. Never paste passwords/API keys into URLs, build arguments, command history, source, CI secrets output or the public UI. The public app's worker route still rejects unverified OIDC identity. When enabled, tasks must target the dedicated private worker.
+Secret values are not environment arguments here. `SecretStore` fetches values by configured names with runtime IAM. Never paste passwords/API keys into URLs, build arguments, command history, source, CI secrets output or the public UI. The worker route rejects unverified OIDC identity. Configure the exact approved worker route, caller and audience; a separate private service additionally requires its own invocation IAM.
 
 The same image/SQL schema can support both services. Startup schema creation and demo seeding were verified against PostgreSQL and use advisory locks. The application uses `Base.metadata.create_all` for a new database; it does not migrate existing tables. Future schema changes need reviewed versioned migrations and backup/rollback procedures. Existing development SQLite files from earlier revisions need an explicit schema update or a fresh test database.
 
@@ -98,4 +98,4 @@ Configure the main server with the matching widget ID/isolated flag and `DEMO_VO
 
 ## GitHub readiness
 
-The application contains a README, technical/interview documentation, pinned dependencies, meaningful pytest checks and `.github/workflows/ci.yml`. The workflow tests Python, checks JavaScript, builds Docker and runs the credential-free HTTP smoke against a loopback container. Cleanup removes only the named CI container. It has no cloud credentials or deploy step. No repository was pushed or published. Review tracked files and secret exclusions before an owner-approved first push; CI success requires a real GitHub run.
+The public [repository](https://github.com/SonnyBali/prospectiq) is anonymously accessible at initial commit `d731821b25859e2ee2be1d5830fefe5cb64e970b`; [initial CI 37796011001 passed](https://github.com/SonnyBali/prospectiq/actions/runs/37796011001). The workflow tests Python/JavaScript, builds Docker and runs a credential-free loopback container smoke. Cleanup removes only the named CI container; it has no cloud credentials or deploy step. The 74-file publication privacy audit found no source/target secret or private-artifact matches. Consult [Actions](https://github.com/SonnyBali/prospectiq/actions) for the final fix commit and [Releases](https://github.com/SonnyBali/prospectiq/releases) for version-tag publication; initial CI does not prove a subsequent commit passed.

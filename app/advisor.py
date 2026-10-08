@@ -29,8 +29,8 @@ SOLUTION_CATALOGUE = MappingProxyType({
     "Evidence validation": ReviewedSolution("Hypothesis: validate the cited observations with the business owner before selecting an integration."),
     "Staff escalation design": ReviewedSolution("Hypothesis: define a human handoff for urgent or unsupported requests and test it in an isolated demonstration."),
     "Revenue scenario review": ReviewedSolution("Hypothesis: compare the user-controlled scenario with measured business data. The Python results describe assumptions, not guaranteed outcomes."),
-    "Recruiter briefing assistant": ReviewedSolution("Hypothesis: test a recruiter briefing assistant that summarizes the cited company research for a human recruiter. Confirm role context and source accuracy; keep candidate ranking and hiring decisions with people.", RECRUITING_TERMS),
-    "Candidate scheduling assistant": ReviewedSolution("Hypothesis: test an interview scheduling assistant that gathers preferred times for a human-approved handoff. Verify candidate consent, calendar access and booking authority; do not assess or rank candidates.", RECRUITING_TERMS),
+    "Recruiter briefing assistant": ReviewedSolution("Hypothesis: adapt the Python/FastAPI workflow to receive an approved role and company brief, retrieve cited research, and ask OpenAI to prepare a recruiter briefing. A recruiter checks role context and source accuracy; candidate ranking and hiring decisions stay with people.", RECRUITING_TERMS),
+    "Candidate scheduling assistant": ReviewedSolution("Hypothesis: add a Python/FastAPI scheduling handoff that gathers consented preferred times and prepares an interview request for human approval. Calendar access and booking authority must be verified before connecting an integration; do not assess or rank candidates.", RECRUITING_TERMS),
     "Source-grounded company research": ReviewedSolution("Hypothesis: prepare a cited company-research briefing from the retained public sources. Ask a recruiter to confirm relevance and gaps before using it; do not infer private hiring plans, candidate suitability or financial results.", RECRUITING_TERMS + TECHNOLOGY_TERMS),
     "Candidate communication review": ReviewedSolution("Hypothesis: draft candidate communications for a recruiter's review, using only confirmed context. Check accuracy, recipient preferences and suppression before a person approves any message; do not automate hiring decisions.", RECRUITING_TERMS),
 })
@@ -51,6 +51,15 @@ def relevant_solution(solution, cited):
         return True
     return any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", normalize(source["excerpt"]))
                for source in cited for term in solution.evidence_terms)
+
+
+def recruiting_question(message):
+    return any(re.search(r"(?<!\w)" + re.escape(term) + r"(?!\w)", normalize(message))
+               for term in RECRUITING_TERMS)
+
+
+def scenario_question(message):
+    return bool(re.search(r"\b(scenario|calculation|calculate|calculated|numbers|revenue|roi|profit|assumptions)\b", normalize(message)))
 
 
 @dataclass
@@ -74,7 +83,7 @@ def normalize(text):
     return " ".join(text.split()).casefold()
 
 
-def safe_answer(answer: AdvisorAnswer, sources: list, company: str, scenario=None) -> AdvisorAnswer:
+def safe_answer(answer: AdvisorAnswer, sources: list, company: str, scenario=None, question="") -> AdvisorAnswer:
     """A citation ID alone proves nothing: observations must quote the cited excerpt.
 
     Recommendations remain explicitly labeled hypotheses. Numeric explanations use
@@ -111,6 +120,12 @@ def safe_answer(answer: AdvisorAnswer, sources: list, company: str, scenario=Non
     summary = f"Evidence-based guidance for {company}. Observations quote stored research; recommendations are hypotheses to validate."
     if recommendations:
         summary += " Proposed priorities: " + "; ".join(r.title for r in recommendations) + "."
+    if recruiting_question(question) and any(r.title in {"Recruiter briefing assistant", "Candidate scheduling assistant",
+                                                         "Source-grounded company research", "Candidate communication review"}
+                                             for r in recommendations):
+        summary = (f"ProspectIQ can be adapted for recruiting. For {company}, the proposed starting points are "
+                   + "; ".join(r.title for r in recommendations) + ". "
+                   "These are proposed workflows, supported by the cited recruiting context. Confirm integration access and permissions before implementation.")
     # Unknowns are cautiously introduced rather than echoed as factual assertions.
     unknowns = ["Unverified questions remain; consult the stored evidence and validate operational assumptions."] if unknowns else []
     if rejected:
@@ -155,6 +170,15 @@ class Advisor:
             "These are replaced server-side with authoritative Python values. Do not transform them. "
             "All source_ids must exist in this evidence. Be concise. Synthetic evidence is fictional, explicitly acknowledge that."
         )
+        if recruiting_question(message):
+            system += (
+                "\nThe current question explicitly concerns recruiting. Answer that adaptation question directly. "
+                "Select recruiter briefing, candidate scheduling, source-grounded company research or candidate communication review "
+                "from the reviewed catalogue when a cited excerpt mentions staffing/recruiting. "
+                "For a question about connecting or adapting this application, return claims=[]: it asks for a proposed workflow, "
+                "not new company facts. Do not substitute a revenue scenario review or generic service-intake recommendation. "
+                "Cite the staffing/recruitment excerpts for your hypotheses; never infer their actual software stack or candidate data."
+            )
         context = {"company": prospect.profile, "synthetic": prospect.synthetic, "sources": prospect.sources,
                    "purpose": purpose, "scenario": scenario}
         response = self._client.responses.parse(
@@ -179,7 +203,7 @@ class Advisor:
             answer = AdvisorAnswer(summary="The provider did not produce a complete supported answer.", claims=[], recommendations=[],
                                    unknowns=["Response refused or incomplete; no claims were accepted."])
             return AdvisorResult(answer, "openai", accounting, "refused_or_incomplete")
-        return AdvisorResult(safe_answer(response.output_parsed, prospect.sources, prospect.profile["company_name"], scenario), "openai", accounting)
+        return AdvisorResult(safe_answer(response.output_parsed, prospect.sources, prospect.profile["company_name"], scenario, message), "openai", accounting)
 
     def guided(self, prospect, message, scenario):
         """Offline, evidence-aware scripted fallback; never labeled generative AI."""
