@@ -14,6 +14,7 @@ from .schemas import AdvisorAnswer, Claim, Recommendation
 class ReviewedSolution:
     rationale: str
     evidence_terms: tuple[str, ...] = ()
+    plain_reply: str = ""
 
 
 RECRUITING_TERMS = ("staffing", "recruiter", "recruiters", "recruiting", "recruitment", "rpo", "talent services", "hiring", "candidate", "candidates")
@@ -23,16 +24,16 @@ TECHNOLOGY_TERMS = ("artificial intelligence", "machine learning", "ai", "cloud"
 # acceptance/templates. Evidence terms gate relevance, not factual truth;
 # company facts still require complete stored-excerpt equality below.
 SOLUTION_CATALOGUE = MappingProxyType({
-    "After-hours AI receptionist": ReviewedSolution("Hypothesis: test an after-hours intake assistant against the cited process. Confirm operating hours, escalation rules and consent before implementation."),
-    "Appointment request assistant": ReviewedSolution("Hypothesis: test a service-request handoff that collects preferred times. Confirm calendar access and booking authority before implementation."),
-    "Consent-aware CRM follow-up": ReviewedSolution("Hypothesis: prepare an internal HighLevel review task. Verify suppression, contact scope and operator approval before any outreach."),
-    "Evidence validation": ReviewedSolution("Hypothesis: validate the cited observations with the business owner before selecting an integration."),
-    "Staff escalation design": ReviewedSolution("Hypothesis: define a human handoff for urgent or unsupported requests and test it in an isolated demonstration."),
-    "Revenue scenario review": ReviewedSolution("Hypothesis: compare the user-controlled scenario with measured business data. The Python results describe assumptions, not guaranteed outcomes."),
-    "Recruiter briefing assistant": ReviewedSolution("Hypothesis: adapt the Python/FastAPI workflow to receive an approved role and company brief, retrieve cited research, and ask OpenAI to prepare a recruiter briefing. A recruiter checks role context and source accuracy; candidate ranking and hiring decisions stay with people.", RECRUITING_TERMS),
-    "Candidate scheduling assistant": ReviewedSolution("Hypothesis: add a Python/FastAPI scheduling handoff that gathers consented preferred times and prepares an interview request for human approval. Calendar access and booking authority must be verified before connecting an integration; do not assess or rank candidates.", RECRUITING_TERMS),
-    "Source-grounded company research": ReviewedSolution("Hypothesis: prepare a cited company-research briefing from the retained public sources. Ask a recruiter to confirm relevance and gaps before using it; do not infer private hiring plans, candidate suitability or financial results.", RECRUITING_TERMS + TECHNOLOGY_TERMS),
-    "Candidate communication review": ReviewedSolution("Hypothesis: draft candidate communications for a recruiter's review, using only confirmed context. Check accuracy, recipient preferences and suppression before a person approves any message; do not automate hiring decisions.", RECRUITING_TERMS),
+    "After-hours AI receptionist": ReviewedSolution("Hypothesis: test an after-hours intake assistant against the cited process. Confirm operating hours, escalation rules and consent before implementation.", plain_reply="An AI receptionist could take messages after hours and pass requests to your team."),
+    "Appointment request assistant": ReviewedSolution("Hypothesis: test a service-request handoff that collects preferred times. Confirm calendar access and booking authority before implementation.", plain_reply="An appointment assistant could collect preferred times and help your team arrange bookings."),
+    "Consent-aware CRM follow-up": ReviewedSolution("Hypothesis: prepare an internal HighLevel review task. Verify suppression, contact scope and operator approval before any outreach.", plain_reply="You could draft follow-ups for your team to review before sending."),
+    "Evidence validation": ReviewedSolution("Hypothesis: validate the cited observations with the business owner before selecting an integration.", plain_reply="Start by confirming the company details and choosing one task to improve."),
+    "Staff escalation design": ReviewedSolution("Hypothesis: define a human handoff for urgent or unsupported requests and test it in an isolated demonstration.", plain_reply="Set up a clear handoff so a person can handle urgent or complex requests."),
+    "Revenue scenario review": ReviewedSolution("Hypothesis: compare the user-controlled scenario with measured business data. The Python results describe assumptions, not guaranteed outcomes.", plain_reply="Use the simulator to see how changing your assumptions affects the estimate."),
+    "Recruiter briefing assistant": ReviewedSolution("Hypothesis: adapt the Python/FastAPI workflow to receive an approved role and company brief, retrieve cited research, and ask OpenAI to prepare a recruiter briefing. A recruiter checks role context and source accuracy; candidate ranking and hiring decisions stay with people.", RECRUITING_TERMS, "It could turn company research and job details into a short recruiter briefing."),
+    "Candidate scheduling assistant": ReviewedSolution("Hypothesis: add a Python/FastAPI scheduling handoff that gathers consented preferred times and prepares an interview request for human approval. Calendar access and booking authority must be verified before connecting an integration; do not assess or rank candidates.", RECRUITING_TERMS, "It could collect interview availability and prepare a scheduling request for your team."),
+    "Source-grounded company research": ReviewedSolution("Hypothesis: prepare a cited company-research briefing from the retained public sources. Ask a recruiter to confirm relevance and gaps before using it; do not infer private hiring plans, candidate suitability or financial results.", RECRUITING_TERMS + TECHNOLOGY_TERMS, "It could gather public company information and prepare a short research briefing."),
+    "Candidate communication review": ReviewedSolution("Hypothesis: draft candidate communications for a recruiter's review, using only confirmed context. Check accuracy, recipient preferences and suppression before a person approves any message; do not automate hiring decisions.", RECRUITING_TERMS, "It could draft candidate messages for a recruiter to review before sending."),
 })
 
 
@@ -59,7 +60,7 @@ def recruiting_question(message):
 
 
 def scenario_question(message):
-    return bool(re.search(r"\b(scenario|calculation|calculate|calculated|numbers|revenue|roi|profit|assumptions)\b", normalize(message)))
+    return bool(re.search(r"\b(scenario|simulator|simulation|calculation|calculate|calculated|assumptions)\b", normalize(message)))
 
 
 @dataclass
@@ -81,6 +82,35 @@ def estimate_cost(settings, input_tokens, cached_tokens, output_tokens):
 
 def normalize(text):
     return " ".join(text.split()).casefold()
+
+
+def plain_summary(claims, recommendations, question=""):
+    """Short customer copy from accepted evidence and the same reviewed catalogue."""
+    titles = list(dict.fromkeys(item.title for item in recommendations if item.title in SOLUTION_CATALOGUE))[:3]
+    if titles:
+        prefix = ""
+        if recruiting_question(question) and any(SOLUTION_CATALOGUE[title].evidence_terms for title in titles):
+            prefix = "Yes. ProspectIQ can be adapted for recruiting. "
+        return prefix + " ".join(SOLUTION_CATALOGUE[title].plain_reply for title in titles)
+    # Do not shorten a factual excerpt: cutting its context can change its meaning.
+    for claim in claims:
+        if len(claim.text.split()) <= 45 and len(claim.text) <= 300:
+            return claim.text
+    return "I need a little more information to answer that. Could you share more detail?"
+
+
+def plain_history(content):
+    """Read older server-generated transcripts without restoring their long appendix."""
+    if not content.startswith(("Evidence-based guidance for ", "ProspectIQ can be adapted for recruiting.", "Guided demo for ")):
+        return content
+    titles = [title for line in content.splitlines()[1:] for title in SOLUTION_CATALOGUE if line.startswith(title + ": ")]
+    recs = [Recommendation(title=title, rationale="", source_ids=[]) for title in titles]
+    reply = plain_summary([], recs, "recruiting" if content.startswith("ProspectIQ can be adapted for recruiting.") else "")
+    # Preserve stored calculation values without recomputing or inventing historical assumptions.
+    scenario = re.search(r"Under your assumptions, Python calculates (.*?) The calculation uses", content)
+    if scenario:
+        reply += " With those assumptions, the estimate is " + scenario.group(1)
+    return reply
 
 
 def safe_answer(answer: AdvisorAnswer, sources: list, company: str, scenario=None, question="") -> AdvisorAnswer:
@@ -117,15 +147,7 @@ def safe_answer(answer: AdvisorAnswer, sources: list, company: str, scenario=Non
         recommendations.append(Recommendation(title=recommendation.title, rationale=rationale, source_ids=recommendation.source_ids))
     # Free-form summaries/unknowns must not smuggle unsupported facts or arithmetic.
     # The introductory summary is deterministic; model content lives in validated fields.
-    summary = f"Evidence-based guidance for {company}. Observations quote stored research; recommendations are hypotheses to validate."
-    if recommendations:
-        summary += " Proposed priorities: " + "; ".join(r.title for r in recommendations) + "."
-    if recruiting_question(question) and any(r.title in {"Recruiter briefing assistant", "Candidate scheduling assistant",
-                                                         "Source-grounded company research", "Candidate communication review"}
-                                             for r in recommendations):
-        summary = (f"ProspectIQ can be adapted for recruiting. For {company}, the proposed starting points are "
-                   + "; ".join(r.title for r in recommendations) + ". "
-                   "These are proposed workflows, supported by the cited recruiting context. Confirm integration access and permissions before implementation.")
+    summary = plain_summary(claims, recommendations, question)
     # Unknowns are cautiously introduced rather than echoed as factual assertions.
     unknowns = ["Unverified questions remain; consult the stored evidence and validate operational assumptions."] if unknowns else []
     if rejected:
@@ -168,7 +190,8 @@ class Advisor:
             "To explain a supplied scenario, reference numeric values only with {{monthly_revenue}}, {{annual_revenue}}, {{monthly_net}}, {{new_customers}}, "
             "{{missed_leads}}, {{recovered_leads}}, {{booked_appointments}}, {{roi_percent}}, or {{break_even_customers}} placeholders. "
             "These are replaced server-side with authoritative Python values. Do not transform them. "
-            "All source_ids must exist in this evidence. Be concise. Synthetic evidence is fictional, explicitly acknowledge that."
+            "All source_ids must exist in this evidence. Choose only the most relevant suggestions for the question. "
+            "Use short sentences and everyday language. Synthetic evidence is fictional, explicitly acknowledge that."
         )
         if recruiting_question(message):
             system += (
@@ -200,7 +223,7 @@ class Advisor:
                       "model": self.settings.openai_model, "price_reference": self.settings.price_reference,
                       "cost_note": "Estimate from configured model rates; not an invoice. Unconfigured rates yield null."}
         if response.status != "completed" or response.output_parsed is None:
-            answer = AdvisorAnswer(summary="The provider did not produce a complete supported answer.", claims=[], recommendations=[],
+            answer = AdvisorAnswer(summary="I couldn't answer that just now. Please try asking a different way.", claims=[], recommendations=[],
                                    unknowns=["Response refused or incomplete; no claims were accepted."])
             return AdvisorResult(answer, "openai", accounting, "refused_or_incomplete")
         return AdvisorResult(safe_answer(response.output_parsed, prospect.sources, prospect.profile["company_name"], scenario, message), "openai", accounting)
@@ -224,5 +247,7 @@ class Advisor:
                                claims=[Claim(**item) for item in cached.get("claims", [])],
                                recommendations=[Recommendation(**item) for item in recs],
                                unknowns=["Actual performance and competitor claims require verified research."])
-        return AdvisorResult(answer, "guided_demo", {"input_tokens": 0, "output_tokens": 0, "cached_input_tokens": 0,
+        checked = safe_answer(answer, prospect.sources, company, scenario, message)
+        checked.summary = "Guided demo: " + checked.summary
+        return AdvisorResult(checked, "guided_demo", {"input_tokens": 0, "output_tokens": 0, "cached_input_tokens": 0,
                                                     "estimated_cost_usd": 0, "model": "scripted", "price_reference": "No API request"})

@@ -1494,8 +1494,8 @@ input,textarea,select {
   justify-content:space-between
 }
 .chat-bubble {
-  font-size:11px;
-  line-height:1.85;
+  font-size:12px;
+  line-height:1.7;
   color:#c5d5e5;
   padding:13px 14px;
   border:1px solid #2a4058;

@@ -19,7 +19,7 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import and_, func, or_, select, text, update
 from starlette.concurrency import run_in_threadpool
 
-from .advisor import Advisor, scenario_question
+from .advisor import Advisor, plain_history, scenario_question
 from .config import Settings
 from .db import AccessLink, BrowserSession, FollowUp, Message, Prospect, RequestTrace, Usage, database, now
 from .demo import DEMO_ID, seed_demo, voice_agents
@@ -341,23 +341,21 @@ def create_app(settings=None, secret_store=None, advisor=None):
         explain_scenario = bool(scenario and scenario_question(payload.message))
         if explain_scenario:
             values = scenario["results"]
-            result.answer.summary += (f" Under your assumptions, Python calculates {values['new_customers']:g} expected customers, "
-                                      f"${values['monthly_revenue']:,.2f} monthly revenue opportunity, "
-                                      f"${values['monthly_net']:,.2f} monthly net opportunity, and "
-                                      f"${values['annual_revenue']:,.2f} annual opportunity. "
-                                      "The calculation uses the full conversion chain before rounding; these are scenarios, not forecasts.")
-        response_text = result.answer.summary + "\n" + "\n".join(r.title + ": " + r.rationale for r in result.answer.recommendations)
+            result.answer.summary += (f" With your assumptions, the estimate is ${values['monthly_revenue']:,.2f} a month, "
+                                      f"or ${values['annual_revenue']:,.2f} a year.")
+        response_text = result.answer.summary
         db.add_all([Message(session_id=current.id, role="user", content=payload.message), Message(session_id=current.id, role="assistant", content=response_text)])
         db.commit()
         used = {id_ for c in result.answer.claims for id_ in c.source_ids} | {id_ for r in result.answer.recommendations for id_ in r.source_ids}
-        return {"answer": result.answer.model_dump(), "citations": [s for s in prospect.sources if s["id"] in used],
+        return {"answer": result.answer.model_dump(), "plain_reply": response_text,
+                "citations": [s for s in prospect.sources if s["id"] in used],
                 "provider": result.provider, "usage": result.usage, "request_id": request.state.request_id,
                 "scenario": scenario, "scenario_explanation_included": explain_scenario}
 
     @app.get("/api/history")
     def history(current=Depends(session), db=Depends(db_session)):
         messages = db.scalars(select(Message).where(Message.session_id == current.id).order_by(Message.created_at).limit(100)).all()
-        return {"messages": [{"role": m.role, "content": m.content} for m in messages]}
+        return {"messages": [{"role": m.role, "content": plain_history(m.content) if m.role == "assistant" else m.content} for m in messages]}
 
     @app.get("/api/research-attribution", response_class=HTMLResponse)
     def attribution(current=Depends(session), db=Depends(db_session)):

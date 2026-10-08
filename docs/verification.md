@@ -2,9 +2,28 @@
 
 October 8, 2026 (Asia/Singapore). The initial local/read-only checks were followed by approved Cloud Run/SQL deployment, public source/initial CI and a completed Cloud Tasks research flow in the dedicated project. This document preserves those stages; [live-release.md](live-release.md) is the current checkpoint. No delivered CRM task, customer outreach, live voice call or booking is claimed.
 
-## Version 1.1 source and release preparation
+## October 9 customer-chat simplification
 
-| Check | Current evidence |
+The deployed customer chat uses short, plain-English replies instead of raw quote blocks, warning/limits panels, E-number markers and token/request clutter. Backend grounding and unsupported-claim rejection, API source citations, usage records and Engineering View remain. Requested scenario explanations still use exact Python figures. New history stores the display reply; older server-generated transcripts read back without the long appendix. Generic actual-company revenue questions no longer automatically append simulator figures.
+
+| Check | Evidence for this update |
+| --- | --- |
+| Python/style | 229 pytest tests passed on Windows in 14.26 seconds; Ruff passed |
+| Frontend behavior | 38 private-entry and 12 chat-renderer cases passed; 346 analytics privacy assertions passed |
+| Fresh local container | 25 HTTP checks passed against a new credential-free Docker container, with zero provider calls |
+| Image/deployment | Both image-only deployments succeeded. Independent readback confirms Ready canonical `prospectiq-00008-j6t` in `ai-leadscore` and staging `prospectiq-00004-25b` in `firewireads-platform`, each at 100% traffic on the same immutable Linux manifest. Exact manifest/index digests are recorded in [live-release.md](live-release.md) |
+| Live HTTP workflow | Each service passed exactly 25 HTTP checks and one paid synthetic OpenAI chat: concise `plain_reply` equals `answer.summary` under 100 words without warning/E-number boilerplate; unchanged Python results, identical persisted history, API citations, measured usage, session privacy and logout passed |
+| Live OpenAI/logging | Canonical request `353bc523fc4e4f349d23fae38f278f50`: 1,700 input / 400 output tokens, server estimate $0.00132. Staging request `4786e8b2284d4387a01f1c8f9447f601`: 1,700 / 381, estimate $0.0012896. Independent Cloud Logging matched completed usage and HTTP 200 to current revisions `prospectiq-00008-j6t` / `prospectiq-00004-25b` |
+| Canonical Chrome | Actual reply: “An AI receptionist could take messages after hours and pass requests to your team.” No citation chips, raw quote blocks, caution panels or cost/request clutter in the answer. History read back a legacy reply and the new short reply with the concise sentence and no old recommendation appendix |
+| Cached private pages | 18 HTTP checks passed across two cached dashboards; no provider calls or outreach |
+| Publication privacy | Latest working-tree scan: 74 files, four actual source-project secret values and seven private-artifact fingerprints, zero findings. Separate comparison of the same 74 upload candidates against four actual target-project Secret Manager values also passed with zero findings |
+| Publication status | The update's source is on [main](https://github.com/SonnyBali/prospectiq/tree/main); [Actions](https://github.com/SonnyBali/prospectiq/actions) records CI against each exact commit. The original `v1.1.0` tag remains unchanged |
+
+The 222-test results below describe the October 8 release and are preserved as historical evidence.
+
+## October 8 version 1.1 source and release preparation
+
+| Check | October 8 evidence |
 | --- | --- |
 | Full source/image suite | 222 pytest tests passed on Windows in 12.93 seconds and in the rebuilt Linux image in 12.06 seconds; Ruff passed |
 | Private entry/disclosure | 38 offline frontend VM cases and JavaScript syntax passed; query identifies the prospect, secret fragment authorizes access, and client mismatch/retry/tracking guards are exercised |

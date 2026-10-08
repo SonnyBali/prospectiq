@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
-from app.db import AccessLink, BrowserSession, FollowUp, Prospect, now
+from app.db import AccessLink, BrowserSession, FollowUp, Message, Prospect, now
 
 
 def test_demo_simulator_chat_history_and_real_traces(client, csrf):
@@ -35,13 +35,31 @@ def test_csrf_and_origin_are_enforced(client, csrf):
 
 def test_chat_only_explains_numbers_when_requested_and_keeps_calculation_unchanged(client, csrf):
     defaults = client.get("/api/demo").json()["simulator_defaults"]
-    for question, explain in [("Can it be connected to recruiting?", False), ("Explain my calculated scenario", True)]:
+    for question, explain in [("Can it be connected to recruiting?", False), ("Explain my calculated scenario", True),
+                              ("What is this company's actual revenue?", False)]:
         response = client.post("/api/chat", headers=csrf, json={"message": question, "scenario": defaults})
         assert response.status_code == 200
         body = response.json()
         assert body["scenario_explanation_included"] is explain
         assert body["scenario"]["results"]["monthly_revenue"] == 8100
-        assert ("Under your assumptions, Python calculates" in body["answer"]["summary"]) is explain
+        assert ("$8,100.00 a month, or $97,200.00 a year" in body["plain_reply"]) is explain
+        assert body["plain_reply"] == body["answer"]["summary"]
+
+
+def test_chat_history_saves_the_plain_answer_and_keeps_diagnostics_out(client, csrf):
+    body = client.post("/api/chat", headers=csrf, json={"message": "How can we handle after-hours calls?"}).json()
+    assert body["plain_reply"]
+    assert body["citations"]
+    history = client.get("/api/history").json()["messages"]
+    assert history[-1]["content"] == body["plain_reply"]
+    assert "Hypothesis:" not in history[-1]["content"]
+    with client.app.state.db() as db:
+        session = db.scalar(select(BrowserSession))
+        db.add(Message(session_id=session.id, role="assistant", content=(
+            "Evidence-based guidance for Copperline.\nAfter-hours AI receptionist: Hypothesis: test intake. Confirm permissions.")))
+        db.commit()
+    older = client.get("/api/history").json()["messages"][-1]["content"]
+    assert older == "An AI receptionist could take messages after hours and pass requests to your team."
 
 
 def test_session_cookie_is_httponly_and_no_cache(client):

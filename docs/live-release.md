@@ -2,7 +2,21 @@
 
 October 8, 2026 (Asia/Singapore). The owner-approved public recruiter demo is now live at [prospect.firewireads.com](https://prospect.firewireads.com): valid HTTPS, synthetic dashboard, real cited OpenAI chat, Python simulator, history and Engineering View were verified in Chrome. The canonical same-origin HTTP smoke passed 25 checks, with matching events independently read from Cloud Logging. [The temporary Cloud Run URL](https://prospectiq-s4gztnjt6a-uc.a.run.app) remains a verified fallback.
 
-## Version 1.1 release checkpoint
+## October 9 customer-chat update: live verified
+
+The update replaces the customer conversation's raw research quote blocks, warning/limits panels, E-number citation markers and token/request clutter with short, plain-English replies. The server still validates complete factual excerpts and reviewed recommendations, returns API citations, records usage and exposes actual processing in Engineering View. Exact simulator figures appear when the user asks about their calculated scenario; generic questions about a company's actual revenue do not automatically append those figures. New conversation records store the displayed reply. Legacy server-generated transcripts read back without the old recommendation appendix, preserving stored calculation values.
+
+Verified preparation: 229 pytest tests on Windows in 14.26 seconds; Ruff; 38 private-entry and 12 chat-renderer cases; 346 analytics assertions; and 25 HTTP checks against a fresh credential-free Docker container, with zero provider calls. Deployed image Linux manifest: `sha256:f89527adc50760d95c9ff479238fab8bb616202799b0645f582cbaffa1adb655`; image index: `sha256:317daddc56b56701fb14af54c96a1e17be4569633b8793e811098352167780af`.
+
+Both image-only deployments succeeded. Independent service readback confirms Ready canonical revision `prospectiq-00008-j6t` in `ai-leadscore/us-central1` and Ready staging revision `prospectiq-00004-25b` in `firewireads-platform/us-central1`, each receiving 100% traffic on that same manifest.
+
+Each service passed exactly 25 live HTTP checks and one paid synthetic OpenAI chat. The checks verified a concise `plain_reply` identical to `answer.summary`, under 100 words and without warning/E-number boilerplate, exact unchanged Python results, identical persisted history, API citations, measured usage, session privacy and logout. Canonical request `353bc523fc4e4f349d23fae38f278f50` recorded 1,700 input / 400 output tokens, server estimate `$0.00132`. Staging request `4786e8b2284d4387a01f1c8f9447f601` recorded 1,700 input / 381 output tokens, estimate `$0.0012896`. Independent Cloud Logging matched completed OpenAI usage and HTTP 200 on the respective current revisions.
+
+Actual Chrome on the canonical hostname displayed “An AI receptionist could take messages after hours and pass requests to your team.” without chips, raw quote blocks, cautions or cost/request details. The canonical History button read back both a legacy reply and the new short reply with the concise sentence and no old recommendation appendix. Two cached private dashboards passed 18 HTTP checks, with no provider calls or outreach. The latest working-tree publication scan checked 74 files against four actual source-project secret values and seven private-artifact fingerprints, with zero findings. A separate comparison of the same 74 upload candidates against four actual target-project Secret Manager values also passed with zero findings.
+
+The customer-chat source is available on [main](https://github.com/SonnyBali/prospectiq/tree/main). The original `v1.1.0` tag remains immutable. [Actions](https://github.com/SonnyBali/prospectiq/actions) records CI against each exact source commit.
+
+## October 8 version 1.1 release checkpoint
 
 The owner authorized publication of the v1.1 code and Markdown documentation to a public GitHub repository. Source preparation is distinct from image deployment and repository/tag publication. This public record excludes real contact details, private capability URLs, private exports and local verification artifacts.
 
@@ -23,7 +37,7 @@ The owner authorized publication of the v1.1 code and Markdown documentation to 
 - [x] Public GitHub source published and anonymously accessible; initial CI run passed.
 - Versioned source/downloads: [v1.1.0 release](https://github.com/SonnyBali/prospectiq/releases/tag/v1.1.0). Check [Actions](https://github.com/SonnyBali/prospectiq/actions) for CI against the exact tag commit.
 
-The current immutable image manifest is `sha256:1edf72400d13eabf7377539c78019027de5997be8fdad049a1eb5d1202c3d2b7`. The canonical hostname still serves project `ai-leadscore/us-central1`, Ready revision `prospectiq-00007-n2g`, with 100% traffic. Canonical OpenAPI returned HTTP 200/version `1.1.0` at the 14:49 UTC checkpoint. The earlier v1.1 image/revision `prospectiq-00006-ksp` passed 212 tests before the subsequent attribution/recruiting fixes; those counts are historical.
+The October 8 immutable image manifest is `sha256:1edf72400d13eabf7377539c78019027de5997be8fdad049a1eb5d1202c3d2b7`. At that checkpoint the canonical hostname served project `ai-leadscore/us-central1`, Ready revision `prospectiq-00007-n2g`, with 100% traffic. Canonical OpenAPI returned HTTP 200/version `1.1.0` at the 14:49 UTC checkpoint. The earlier v1.1 image/revision `prospectiq-00006-ksp` passed 212 tests before the subsequent attribution/recruiting fixes; those counts are historical.
 
 The post-fix canonical smoke passed 25 HTTP checks with actual synthetic OpenAI request `d1b7b6eda1954bb4a3b2d19ac5746012`, 1,686 input / 338 output tokens and estimate `$0.0012152`. Python remains the numerical authority; SQL history/traces, session cookies, privacy and logout passed. The earlier v1.1 request `e5b6b07d9113434aa233e8299c4cc952` independently matched Cloud Logging on revision `prospectiq-00006-ksp` at `2026-10-08T14:44:12.617159Z`, HTTP 200, 3,418.88 ms, 1,659 input / 247 output tokens and estimate `$0.0010588`.
 

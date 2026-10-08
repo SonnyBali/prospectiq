@@ -189,10 +189,10 @@ function citations(sourceIds) {
     if (!state.sources.has(id)) continue;
     const source = state.sources.get(id);
     const number = state.sourceNumbers.get(id);
-    const link = el("a", "citation-chip", `E${number}`);
+    const link = el("a", "citation-chip", "Source");
     link.href = `#evidence-${number}`;
     link.title = displayText(source.title, "Evidence source");
-    link.setAttribute("aria-label", `Evidence ${number}: ${displayText(source.title, "Research source")}`);
+    link.setAttribute("aria-label", `Source: ${displayText(source.title, "Research source")}`);
     list.append(link);
   }
   return list;
@@ -222,7 +222,7 @@ function renderSources() {
     const card = el("article", "source-card");
     card.id = `evidence-${number}`;
     const top = el("div", "source-topline");
-    top.append(el("span", "source-id", `E${number} / EVIDENCE`), el("span", "source-type", source.is_synthetic ? "SYNTHETIC" : "RESEARCH SOURCE"));
+    top.append(el("span", "source-id", "Research"), el("span", "source-type", source.is_synthetic ? "SYNTHETIC" : "RESEARCH SOURCE"));
     card.append(top, el("h3", "", displayText(source.title, "Research source")), el("p", "", displayText(source.excerpt, "No excerpt available.")));
     const footer = el("div", "source-card-footer");
     footer.append(el("span", "", `Observed ${friendlyDate(source.observed_at)}`));
@@ -516,18 +516,14 @@ function selectAgent(agent, index) {
   }
 }
 
-function appendMessage(role, content, { label, structured, responseMeta, scenario } = {}) {
+function appendMessage(role, content, { label, scenario } = {}) {
   const wrapper = el("article", `chat-message ${role === "user" ? "user" : "assistant"}`);
-  wrapper.append(el("div", "chat-message-label", label || (role === "user" ? "YOU" : "ADVISOR")));
+  wrapper.append(el("div", "chat-message-label", label || (role === "user" ? "You" : "Advisor")));
   const bubble = el("div", "chat-bubble");
-  if (structured) renderAnswer(bubble, structured);
-  else {
-    const paragraphs = String(content || "").split(/\n\s*\n/);
-    for (const paragraph of paragraphs) bubble.append(el("p", "", paragraph));
-  }
+  const paragraphs = String(content || "").split(/\n\s*\n/);
+  for (const paragraph of paragraphs) bubble.append(el("p", "", paragraph));
   if (scenario?.results && scenario?.assumptions) renderAdvisorScenario(bubble, scenario);
   wrapper.append(bubble);
-  if (responseMeta) wrapper.append(el("span", "response-meta", responseMeta));
   $("chat-messages").append(wrapper);
   $("chat-messages").scrollTop = $("chat-messages").scrollHeight;
   return wrapper;
@@ -535,7 +531,7 @@ function appendMessage(role, content, { label, structured, responseMeta, scenari
 
 function renderAdvisorScenario(container, scenario) {
   const block = el("div", "advisor-scenario");
-  block.append(el("strong", "answer-section-title", "Submitted scenario · calculated by Python"));
+  block.append(el("strong", "answer-section-title", "Your estimate"));
   const metrics = el("div", "advisor-scenario-metrics");
   const values = [
     ["Monthly revenue", numerical(scenario.results.monthly_revenue, money)],
@@ -548,36 +544,14 @@ function renderAdvisorScenario(container, scenario) {
     row.append(el("span", "", label), el("strong", "", value));
     metrics.append(row);
   }
-  block.append(metrics, el("p", "", "These are the server's exact results for the assumptions sent with this message. They are hypothetical expected values."));
+  block.append(metrics);
   container.append(block);
 }
 
-function renderAnswer(container, answer) {
-  container.append(el("p", "", displayText(answer.summary, "No summary was returned.")));
-  for (const claim of Array.isArray(answer.claims) ? answer.claims : []) {
-    const text = displayText(claim?.text);
-    if (!text) continue;
-    const paragraph = el("p", "answer-claim", text);
-    paragraph.append(citations(claim.source_ids));
-    container.append(paragraph);
-  }
-  const recommendations = Array.isArray(answer.recommendations) ? answer.recommendations : [];
-  if (recommendations.length) {
-    const section = el("div", "answer-section");
-    section.append(el("strong", "answer-section-title", "Suggested next steps"));
-    for (const recommendation of recommendations) {
-      const block = el("div", "answer-recommendation");
-      block.append(el("strong", "", displayText(recommendation.title)));
-      const paragraph = el("p", "", displayText(recommendation.rationale));
-      paragraph.append(citations(recommendation.source_ids));
-      block.append(paragraph);
-      section.append(block);
-    }
-    container.append(section);
-  }
-  const unknowns = el("div", "answer-unknowns");
-  renderUnknowns(unknowns, answer.unknowns, "Limits and unknowns");
-  container.append(unknowns);
+function advisorReply(response) {
+  // Grounding details remain in the API/source cards; the conversation is plain text.
+  const reply = displayText(response.plain_reply).trim() || displayText(response.answer?.summary).trim();
+  return reply || "I couldn't prepare an answer. Please try asking again.";
 }
 
 function focusAdvisor() {
@@ -593,19 +567,6 @@ function setChatBusy(busy) {
   for (const button of document.querySelectorAll("[data-prompt], .recommendation-question")) button.disabled = busy;
 }
 
-function usageDescription(usage) {
-  if (!usage || typeof usage !== "object") return "Usage unavailable";
-  const input = Number(usage.input_tokens || 0);
-  const output = Number(usage.output_tokens || 0);
-  const cached = Number(usage.cached_input_tokens || 0);
-  const parts = [`${quantity.format(input)} in / ${quantity.format(output)} out`];
-  if (cached > 0) parts.push(`${quantity.format(cached)} cached`);
-  const cost = usage.estimated_cost_usd;
-  if (typeof cost === "number" && Number.isFinite(cost)) parts.push(`estimated $${cost.toFixed(cost < 0.01 ? 6 : 4)}`);
-  else parts.push("cost estimate unavailable");
-  return parts.join(" · ");
-}
-
 async function sendChat(message) {
   if (state.chatBusy || !state.session) return;
   const text = String(message || "").trim();
@@ -615,8 +576,7 @@ async function sendChat(message) {
   $("chat-input").value = "";
   $("chat-suggestions").hidden = true;
   appendMessage("user", text);
-  const provider = state.session.advisor_mode === "openai" ? "OpenAI" : "the guided demo";
-  status("chat-status", `Preparing a response with ${provider}…`);
+  status("chat-status", state.session.advisor_mode === "openai" ? "Thinking…" : "Preparing the demo answer…");
   const body = { message: text };
   const scenario = validCurrentScenario();
   if (scenario) body.scenario = scenario;
@@ -626,15 +586,11 @@ async function sendChat(message) {
     indexSources(response.citations);
     renderSources();
     const responseProvider = displayText(response.provider, "unknown");
-    const modelLabel = responseProvider === "openai" ? "OPENAI ADVISOR" : responseProvider.includes("guided") ? "GUIDED DEMO" : humanize(responseProvider).toUpperCase();
-    const usage = usageDescription(response.usage);
-    appendMessage("assistant", "", {
+    const modelLabel = responseProvider.includes("guided") ? "Guided demo" : "Advisor";
+    appendMessage("assistant", advisorReply(response), {
       label: modelLabel,
-      structured: response.answer || { summary: "The server did not return an advisor answer." },
       scenario: body.scenario && response.scenario_explanation_included === true ? response.scenario : null,
-      responseMeta: `Request ${displayText(response.request_id, "unavailable")} · ${usage}`,
     });
-    $("chat-usage").textContent = `${humanize(responseProvider)} · ${usage}`;
     status("chat-status", "");
   } catch (error) {
     status("chat-status", error.message, true);
@@ -648,15 +604,15 @@ async function sendChat(message) {
 async function loadHistory() {
   if (state.chatBusy) return;
   $("chat-history-button").disabled = true;
-  status("chat-status", "Loading the current session's history…");
+  status("chat-status", "Loading your conversation…");
   try {
     const response = await api("/api/history");
     const messages = Array.isArray(response.messages) ? response.messages : [];
-    if (!messages.length) { status("chat-status", "No stored messages in this session yet."); return; }
+    if (!messages.length) { status("chat-status", "Your conversation will appear here."); return; }
     $("chat-messages").replaceChildren();
-    for (const message of messages) appendMessage(message.role === "user" ? "user" : "assistant", displayText(message.content), { label: message.role === "user" ? "YOU · SESSION HISTORY" : "ADVISOR · SESSION HISTORY" });
+    for (const message of messages) appendMessage(message.role === "user" ? "user" : "assistant", displayText(message.content));
     $("chat-suggestions").hidden = true;
-    status("chat-status", `${messages.length} stored session messages loaded.`);
+    status("chat-status", "Your conversation is ready.");
   } catch (error) { status("chat-status", error.message, true); }
   finally { $("chat-history-button").disabled = false; }
 }
@@ -804,13 +760,13 @@ function renderSession(session) {
   }
   setAssumptions(session.simulator_defaults);
   renderAgents(session.voice_agents);
-  $("advisor-company").textContent = `Context: ${company}`;
+  $("advisor-company").textContent = company;
   const openai = session.advisor_mode === "openai";
-  $("advisor-provider").textContent = openai ? "OPENAI · RESPONSES API" : "GUIDED DEMO · NO MODEL CALL";
+  $("advisor-provider").textContent = openai ? "AI advisor" : "Guided demo";
   $("advisor-provider").classList.toggle("guided", !openai);
-  $("advisor-mode-note").textContent = openai ? "Responses use your saved research and calculated scenario. The advisor will flag missing evidence." : "OpenAI is not configured for this session. This guided demo uses saved evidence and deterministic scenario results; it does not call an AI model.";
+  $("advisor-mode-note").textContent = openai ? "Ask about your business or a useful next step." : "A scripted preview using saved research. No AI model is called.";
   $("chat-messages").replaceChildren();
-  appendMessage("assistant", `Welcome, ${firstName}. This workspace brings together the saved research for ${company} and a transparent opportunity simulator. Ask about an opportunity, its supporting evidence, or the assumptions behind your scenario.`, { label: "WORKSPACE GUIDE" });
+  appendMessage("assistant", `Hi, ${firstName}. What would you like to improve at ${company}?`);
   $("chat-suggestions").hidden = false;
   $("main-content").hidden = false;
   $("advisor-shortcut").hidden = false;

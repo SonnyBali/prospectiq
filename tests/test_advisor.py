@@ -5,7 +5,7 @@ import httpx
 import pytest
 from openai import OpenAI
 
-from app.advisor import Advisor, SOLUTION_CATALOGUE, estimate_cost, safe_answer
+from app.advisor import Advisor, SOLUTION_CATALOGUE, estimate_cost, plain_history, safe_answer
 from app.config import Settings
 from app.schemas import AdvisorAnswer, SimulatorInput
 from app.simulator import calculate
@@ -31,6 +31,48 @@ def test_source_id_alone_does_not_validate_a_claim():
 def test_exact_excerpt_claim_and_valid_source_are_retained():
     result = safe_answer(answer(claims=[{"text": "After-hours callers reach voicemail.", "source_ids": ["intake"]}]), SOURCES, "Example")
     assert len(result.claims) == 1
+
+
+@pytest.mark.parametrize("title,source,question", [
+    ("After-hours AI receptionist", SOURCES[0], "How can we handle calls?"),
+    ("Recruiter briefing assistant", STAFFING_SOURCE, "Can it help with recruiting?"),
+])
+def test_simple_reply_uses_reviewed_suggestion_without_model_prose_or_warning_copy(title, source, question):
+    result = safe_answer(answer(recommendations=[{"title": title, "source_ids": [source["id"]],
+                                                "rationale": "Guaranteed $999999 profit. Already connected to your CRM."}],
+                                unknowns=["Invented private company fact"]), [source], "Example", question=question)
+    assert 5 < len(result.summary.split()) <= 60
+    assert "could" in result.summary
+    for forbidden in ("Hypothesis", "withheld", "Evidence-based", "999999", "Already connected", "Invented", "E2", "E3"):
+        assert forbidden not in result.summary
+    assert result.recommendations[0].source_ids == [source["id"]]
+    assert result.unknowns  # Diagnostics stay available, outside the customer reply.
+
+
+@pytest.mark.parametrize("claim,source_id", [("We guarantee market-leading results.", "intake"),
+                                              ("After-hours callers reach voicemail.", "missing")])
+def test_unsupported_answer_remains_a_gentle_request_for_detail(claim, source_id):
+    result = safe_answer(answer(claims=[{"text": claim, "source_ids": [source_id]}]), SOURCES, "Example")
+    assert not result.claims and not result.recommendations
+    assert result.summary == "I need a little more information to answer that. Could you share more detail?"
+
+
+def test_old_history_does_not_restore_the_verbose_recommendation_appendix():
+    legacy = ("Evidence-based guidance for Example. Observations quote stored research; recommendations are hypotheses to validate.\n"
+              "After-hours AI receptionist: Hypothesis: test intake. Confirm permissions before implementation.")
+    assert plain_history(legacy) == "An AI receptionist could take messages after hours and pass requests to your team."
+    simple = "An AI receptionist could help your team."
+    assert plain_history(simple) == simple
+
+
+def test_refused_response_stays_incomplete_with_a_short_readable_reply():
+    sdk = SimpleNamespace(responses=SimpleNamespace(parse=lambda **kwargs: SimpleNamespace(
+        status="incomplete", output_parsed=None, usage=SimpleNamespace(input_tokens=10, output_tokens=0))))
+    result = Advisor(Settings(), None, sdk).answer(SimpleNamespace(profile={"company_name": "Example"},
+                                                                 synthetic=True, sources=SOURCES), "Can you help?", [])
+    assert result.status == "refused_or_incomplete"
+    assert not result.answer.claims and not result.answer.recommendations
+    assert result.answer.summary == "I couldn't answer that just now. Please try asking a different way."
 
 
 def test_unknown_citations_fail_closed():

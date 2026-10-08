@@ -180,7 +180,122 @@ assert.ok(!imported.includes("public website research"));
 assert.ok(imported.includes("saved business context and evidence"));
 cases += 3;
 
+// Exercise the actual conversation renderer in the same offline frontend VM.
+// Text is never interpreted as HTML; grounding/usage remains outside chat bubbles.
+class RenderNode {
+  constructor(tag = "div") {
+    this.tagName = tag;
+    this.children = [];
+    this.className = "";
+    this.attributes = {};
+    this.value = "";
+    this.hidden = false;
+    this.classList = {toggle() {}, remove() {}, add() {}};
+    this.ownText = "";
+  }
+  set textContent(value) { this.ownText = String(value); this.children = []; }
+  get textContent() { return this.ownText + this.children.map(child => child.textContent || "").join(""); }
+  append(...children) { this.children.push(...children); }
+  replaceChildren(...children) { this.ownText = ""; this.children = children; }
+  setAttribute(name, value) { this.attributes[name] = value; }
+  focus() {}
+}
+const conversation = publicDemo.context;
+const renderNodes = new Map();
+conversation.document.getElementById = id => {
+  if (!renderNodes.has(id)) renderNodes.set(id, new RenderNode());
+  return renderNodes.get(id);
+};
+conversation.document.createElement = tag => new RenderNode(tag);
+let chatRendererCases = 0;
+assert.equal(vm.runInContext('advisorReply({plain_reply: "A simple answer.", answer: {summary: "Old summary"}})', conversation), "A simple answer.");
+assert.equal(vm.runInContext('advisorReply({answer: {summary: "Compatible summary"}})', conversation), "Compatible summary");
+assert.equal(vm.runInContext('advisorReply({plain_reply: "  ", answer: {summary: "Fallback summary"}})', conversation), "Fallback summary");
+assert.ok(vm.runInContext('advisorReply({})', conversation).includes("try asking again"));
+chatRendererCases += 4;
+
+const escaped = vm.runInContext('appendMessage("assistant", "<img src=x onerror=alert(1)>\\n\\nSecond paragraph")', conversation);
+const escapedBubble = escaped.children[1];
+assert.equal(escapedBubble.children.length, 2);
+assert.equal(escapedBubble.children[0].tagName, "p");
+assert.equal(escapedBubble.children[0].textContent, "<img src=x onerror=alert(1)>");
+assert.ok(!escapedBubble.children.some(child => child.tagName === "img"));
+chatRendererCases++;
+
+const assumptions = {monthly_leads: 400, missed_rate: 0.25, recovery_rate: 0.6,
+  booking_rate: 0.5, close_rate: 0.3, average_sale: 1200, monthly_cost: 497};
+const results = {monthly_revenue: 10800, annual_revenue: 129600, monthly_net: 10303, new_customers: 9};
+conversation.responseFixture = {plain_reply: "Start with a recruiter briefing assistant.",
+  answer: {summary: "Legacy summary", claims: [{text: "Raw quote E2", source_ids: ["source2"]}],
+    recommendations: [{title: "Verbose title", rationale: "Hypothesis: long implementation details", source_ids: ["source2"]}],
+    unknowns: ["Some generated statements were withheld."]},
+  citations: [{id: "source2", title: "Staffing context", excerpt: "Retained public staffing evidence", url: "https://example.com/services", observed_at: "2026-10-08T00:00:00Z"}],
+  provider: "openai", request_id: "FictionalRequest", usage: {input_tokens: 100, output_tokens: 20, estimated_cost_usd: 0.001},
+  scenario: {assumptions, results}, scenario_explanation_included: false};
+vm.runInContext('state.session = {advisor_mode: "openai"}; api = async () => responseFixture; validCurrentScenario = () => responseFixture.scenario.assumptions;', conversation);
+await vm.runInContext('sendChat("Can it connect to recruiting?")', conversation);
+let messages = renderNodes.get("chat-messages");
+let last = messages.children.at(-1);
+assert.equal(last.children[0].textContent, "Advisor");
+assert.equal(last.children[1].textContent, conversation.responseFixture.plain_reply);
+for (const excluded of ["E2", "E3", "Raw quote", "Verbose title", "Hypothesis", "withheld", "Limits", "FictionalRequest", "tokens", "$0.001"]) {
+  assert.ok(!last.textContent.includes(excluded), `Chat must not expose ${excluded}`);
+}
+assert.equal(last.children.length, 2, "No per-message diagnostics are appended");
+assert.ok(!last.textContent.includes("Your estimate"), "Unrelated questions do not display scenario rows");
+chatRendererCases++;
+assert.equal(vm.runInContext('state.sources.get("source2").excerpt', conversation), "Retained public staffing evidence");
+assert.ok(renderNodes.get("evidence-sources").textContent.includes("Retained public staffing evidence"));
+chatRendererCases++;
+
+const citation = vm.runInContext('citations(["source2"])', conversation).children[0];
+const sourceNumber = vm.runInContext('state.sourceNumbers.get("source2")', conversation);
+assert.equal(citation.textContent, "Source");
+assert.equal(citation.href, `#evidence-${sourceNumber}`);
+assert.equal(citation.attributes["aria-label"], "Source: Staffing context");
+const evidenceCard = renderNodes.get("evidence-sources").children.find(card => card.id === `evidence-${sourceNumber}`);
+assert.equal(evidenceCard.children[0].children[0].textContent, "Research");
+assert.ok(!/\bE\d+\b/.test(citation.textContent + evidenceCard.textContent));
+const externalSource = evidenceCard.children.at(-1).children.find(child => child.tagName === "a");
+assert.equal(externalSource.href, "https://example.com/services");
+assert.equal(externalSource.rel, "noopener noreferrer");
+chatRendererCases++;
+
+conversation.responseFixture.scenario_explanation_included = true;
+await vm.runInContext('sendChat("Explain my revenue scenario")', conversation);
+last = messages.children.at(-1);
+const scenarioBlock = last.children[1].children[1];
+assert.equal(scenarioBlock.children[0].textContent, "Your estimate");
+const displayed = scenarioBlock.children[1].children.map(row => row.children[1].textContent);
+assert.deepEqual(displayed, ["$10,800", "$129,600", "$10,303", "9"]);
+assert.equal(scenarioBlock.children.length, 2, "Do not repeat the warning paragraph");
+chatRendererCases++;
+
+conversation.responseFixture = {messages: [{role: "user", content: "Where should I start?"},
+  {role: "assistant", content: "Start with a recruiter briefing assistant."}]};
+await vm.runInContext("loadHistory()", conversation);
+messages = renderNodes.get("chat-messages");
+assert.equal(messages.children.length, 2);
+assert.equal(messages.children[1].children[0].textContent, "Advisor");
+assert.equal(messages.children[1].children[1].textContent, "Start with a recruiter briefing assistant.");
+assert.equal(renderNodes.get("chat-status").textContent, "Your conversation is ready.");
+chatRendererCases++;
+
+conversation.responseFixture = {plain_reply: "A scripted answer.", provider: "guided_demo", citations: []};
+vm.runInContext('state.session = {advisor_mode: "guided_demo"}; validCurrentScenario = () => null;', conversation);
+await vm.runInContext('sendChat("Try the preview")', conversation);
+assert.equal(messages.children.at(-1).children[0].textContent, "Guided demo");
+assert.equal(messages.children.at(-1).children[1].textContent, "A scripted answer.");
+chatRendererCases++;
+
+vm.runInContext('api = async () => { throw new Error("The server could not complete this request. Please try again."); };', conversation);
+await vm.runInContext('sendChat("Retryable question")', conversation);
+assert.ok(renderNodes.get("chat-status").textContent.includes("Please try again"));
+assert.equal(renderNodes.get("chat-input").value, "Retryable question");
+chatRendererCases++;
+
 console.log(JSON.stringify({status: "PASS", offline_only: true, cases,
+  chat_renderer_cases: chatRendererCases,
   query_and_legacy_entry: true, scrub_before_dom_and_requests: true,
   ambiguous_entries_blocked: true, failed_exchange_cannot_reuse_old_cookie: true,
   private_tracking_blocked: true, no_browser_storage: true}));

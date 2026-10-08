@@ -140,11 +140,18 @@ def smoke(base_url=CANONICAL_ORIGIN, origin=CANONICAL_ORIGIN, *, allow_paid=Fals
         require(chat["answer"]["claims"] or chat["answer"]["recommendations"], "supported_advisor_plan_missing")
         require("10,800.00" in chat["answer"]["summary"] and "129,600.00" in chat["answer"]["summary"],
                 "authoritative_numerical_explanation_missing")
+        require(chat.get("plain_reply") == chat["answer"]["summary"]
+                and len(chat["plain_reply"].split()) < 100
+                and not any(label in chat["plain_reply"] for label in (
+                    "Hypothesis:", "Limits and unknowns", "Evidence-based guidance", "E2", "E3")),
+                "short_plain_reply_required")
         checks["one_real_openai_chat_citations_usage_and_unchanged_calculations"] = True
 
         history = request(first, "GET", "/api/history").json()["messages"]
         require(len(history) == 2 and history[0] == {"role": "user", "content": message}
-                and history[1]["role"] == "assistant", "conversation_history_failed")
+                and history[1] == {"role": "assistant", "content": chat["plain_reply"]},
+                "conversation_history_failed")
+        checks["short_plain_reply_and_matching_history"] = True
         trace = request(first, "GET", "/api/engineering")
         traced_chat = next((item for item in trace.json()["recent_requests"] if item["request_id"] == chat["request_id"]), None)
         require(traced_chat is not None and traced_chat["route"] == "/api/chat" and traced_chat["status"] == 200

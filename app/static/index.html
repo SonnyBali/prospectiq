@@ -224,13 +224,13 @@
 
     <aside id="advisor" class="advisor panel" aria-labelledby="advisor-title">
       <div class="advisor-heading"><span class="advisor-avatar" aria-hidden="true">✦</span><div><h2 id="advisor-title">Your business advisor</h2><p id="advisor-company"></p></div><span class="advisor-status-dot" aria-hidden="true"></span></div>
-      <div class="advisor-mode-row"><span id="advisor-provider" class="provider-badge">Loading</span><button id="chat-history-button" class="text-button" type="button">Session history</button></div>
+      <div class="advisor-mode-row"><span id="advisor-provider" class="provider-badge">Loading</span><button id="chat-history-button" class="text-button" type="button">History</button></div>
       <p id="advisor-mode-note" class="advisor-mode-note"></p>
       <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Advisor conversation"></div>
       <div id="chat-suggestions" class="chat-suggestions"><button type="button" data-prompt="What is our strongest opportunity, and what evidence supports it?">What's our strongest opportunity? <span aria-hidden="true">↗</span></button><button type="button" data-prompt="What should we verify before investing in an AI agent?">What should we verify first? <span aria-hidden="true">↗</span></button><button type="button" data-prompt="Help me prioritize a small, measurable first implementation.">Plan a measurable first step <span aria-hidden="true">↗</span></button></div>
       <div id="chat-status" class="chat-status" role="status" aria-live="polite"></div>
       <form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Ask the business advisor</label><textarea id="chat-input" placeholder="Ask about this business…" maxlength="2000" rows="2"></textarea><button id="chat-send" type="submit" aria-label="Send message"><span aria-hidden="true">↑</span></button></form>
-      <div class="advisor-footer"><span>Advice is grounded in the displayed research.</span><span id="chat-usage">Usage appears after each response.</span></div>
+      <div class="advisor-footer"><span>Your conversation is saved for this session.</span></div>
     </aside>
   </main>
   <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
