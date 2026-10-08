@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080f1b">
+  <meta name="description" content="Explore a synthetic business demo with cited AI advice, a Python revenue simulator, engineering traces, and recorded FireWireAds voice-agent demonstrations.">
+  <meta name="robots" content="index, follow">
+  <link rel="canonical" href="https://prospect.firewireads.com/">
+  <title>ProspectIQ | FireWireAds AI Opportunity Intelligence</title>
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="ProspectIQ by FireWireAds">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://prospect.firewireads.com/">
+  <meta property="og:title" content="ProspectIQ | FireWireAds AI Opportunity Intelligence">
+  <meta property="og:description" content="Explore a synthetic business demo with cited AI advice, a Python revenue simulator, engineering traces, and recorded FireWireAds voice-agent demonstrations.">
+  <meta property="og:image" content="https://prospect.firewireads.com/static/prospectiq-social.png">
+  <meta property="og:image:secure_url" content="https://prospect.firewireads.com/static/prospectiq-social.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="ProspectIQ by FireWireAds: cited AI advice, Python scenarios, and an engineering view. Public demo with fictional business data.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ProspectIQ | FireWireAds AI Opportunity Intelligence">
+  <meta name="twitter:description" content="Explore a synthetic business demo with cited AI advice, a Python revenue simulator, engineering traces, and recorded FireWireAds voice-agent demonstrations.">
+  <meta name="twitter:image" content="https://prospect.firewireads.com/static/prospectiq-social.png">
+  <meta name="twitter:image:alt" content="ProspectIQ by FireWireAds: cited AI advice, Python scenarios, and an engineering view. Public demo with fictional business data.">
+  <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+  <link rel="apple-touch-icon" sizes="180x180" href="/static/apple-touch-icon.png">
+  <link rel="stylesheet" href="/static/styles.css">
+  <script src="/static/analytics.js" defer></script>
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to dashboard</a>
+  <div class="ambient ambient-one" aria-hidden="true"></div>
+  <div class="ambient ambient-two" aria-hidden="true"></div>
+  <header class="site-header">
+    <a class="brand" href="/" aria-label="ProspectIQ home">
+      <span class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></span>
+      <span class="brand-name">Prospect<span>IQ</span><small>BY FIREWIREADS</small></span>
+    </a>
+    <nav class="header-nav" aria-label="Dashboard navigation">
+      <a href="#overview" class="active">Overview</a>
+      <a href="#simulator">Simulator</a>
+      <a href="#voice-lab">Voice lab</a>
+      <a href="#engineering">Engineering</a>
+    </nav>
+    <span id="session-label" class="session-badge"><span class="badge-dot"></span>Loading session</span>
+  </header>
+
+  <div id="demo-banner" class="demo-banner" hidden>
+    <span class="demo-label">PUBLIC DEMO</span>
+    <span>A fictional business. Real application logic. Research and estimates are illustrative.</span>
+    <a href="#engineering">See how it works <span aria-hidden="true">↗</span></a>
+  </div>
+
+  <div id="load-state" class="load-state" role="status" aria-live="polite">
+    <span class="loading-orbit" aria-hidden="true"></span>
+    <h1>Preparing your intelligence workspace</h1>
+    <p>Loading saved research and a secure session.</p>
+  </div>
+  <div id="load-error" class="load-error" role="alert" hidden>
+    <span class="eyebrow">SESSION UNAVAILABLE</span>
+    <h1>We couldn't open this dashboard.</h1>
+    <p id="load-error-message">Please try again.</p>
+    <button id="retry-load" class="button button-primary" type="button">Try again</button>
+    <a href="/" class="button button-secondary">Open public demo</a>
+  </div>
+
+  <main id="main-content" class="workspace" hidden>
+    <div class="dashboard-column">
+      <section class="hero" id="overview" aria-labelledby="hero-title">
+        <div class="eyebrow"><span class="spark" aria-hidden="true">✦</span> OPPORTUNITY INTELLIGENCE</div>
+        <h1 id="hero-title">Your next opportunity starts here.</h1>
+        <p id="hero-subtitle" class="hero-subtitle"></p>
+        <p id="personalization-note" class="hero-subtitle"></p>
+        <div class="company-meta">
+          <span id="industry-label" class="meta-chip"></span>
+          <span id="research-label" class="meta-chip"></span>
+          <a id="company-website" class="meta-chip external-link" target="_blank" rel="noopener noreferrer" hidden></a>
+        </div>
+      </section>
+
+      <section class="intelligence-card panel" aria-labelledby="intelligence-title">
+        <div class="section-heading">
+          <div><span class="eyebrow">01 / UNDERSTAND THE BUSINESS</span><h2 id="intelligence-title">A clearer picture of your business</h2></div>
+          <span id="evidence-badge" class="quiet-badge">Saved research</span>
+        </div>
+        <p id="intelligence-summary" class="intelligence-summary"></p>
+        <div id="intelligence-claims" class="insight-list"></div>
+        <div id="intelligence-unknowns" class="unknowns-block" hidden></div>
+      </section>
+
+      <section class="recommendations-section" aria-labelledby="recommendations-title">
+        <div class="section-heading outside-heading">
+          <div><span class="eyebrow">02 / FIND THE OPENING</span><h2 id="recommendations-title">Where AI could make a difference</h2></div>
+          <span class="section-aside">Recommendations, not guarantees</span>
+        </div>
+        <div id="recommendations" class="recommendations-grid"></div>
+      </section>
+
+      <section class="simulator panel" id="simulator" aria-labelledby="simulator-title">
+        <div class="section-heading">
+          <div><span class="eyebrow">03 / EXPLORE THE NUMBERS</span><h2 id="simulator-title">What could recovered leads be worth?</h2></div>
+          <span class="quiet-badge">Python calculation</span>
+        </div>
+        <p class="section-description">Adjust the assumptions. The simulator calculates the outcome; the advisor explains it.</p>
+        <form id="simulator-form" class="simulator-controls" novalidate>
+          <div class="assumption-control" data-field="monthly_leads">
+            <label for="monthly-leads">Monthly inbound leads</label>
+            <div class="assumption-value"><input id="monthly-leads" name="monthly_leads" type="number" min="0" max="100000" step="1" inputmode="numeric" aria-describedby="monthly-leads-hint"><span>leads</span></div>
+            <input type="range" min="0" max="1000" step="10" data-range="monthly_leads" aria-label="Monthly inbound leads slider">
+            <small id="monthly-leads-hint">Calls, forms, or messages</small>
+          </div>
+          <div class="assumption-control" data-field="missed_rate">
+            <label for="missed-rate">Missed lead rate</label>
+            <div class="assumption-value"><input id="missed-rate" name="missed_rate" type="number" min="0" max="100" step="1" inputmode="decimal"><span>%</span></div>
+            <input type="range" min="0" max="100" step="1" data-range="missed_rate" aria-label="Missed lead rate slider">
+            <small>Share currently going unanswered</small>
+          </div>
+          <div class="assumption-control" data-field="recovery_rate">
+            <label for="recovery-rate">AI recovery rate</label>
+            <div class="assumption-value"><input id="recovery-rate" name="recovery_rate" type="number" min="0" max="100" step="1" inputmode="decimal"><span>%</span></div>
+            <input type="range" min="0" max="100" step="1" data-range="recovery_rate" aria-label="AI recovery rate slider">
+            <small>Missed leads successfully re-engaged</small>
+          </div>
+          <div class="assumption-control" data-field="booking_rate">
+            <label for="booking-rate">Booking rate</label>
+            <div class="assumption-value"><input id="booking-rate" name="booking_rate" type="number" min="0" max="100" step="1" inputmode="decimal"><span>%</span></div>
+            <input type="range" min="0" max="100" step="1" data-range="booking_rate" aria-label="Booking rate slider">
+            <small>Recovered leads booking an appointment</small>
+          </div>
+          <div class="assumption-control" data-field="close_rate">
+            <label for="close-rate">Close rate</label>
+            <div class="assumption-value"><input id="close-rate" name="close_rate" type="number" min="0" max="100" step="1" inputmode="decimal"><span>%</span></div>
+            <input type="range" min="0" max="100" step="1" data-range="close_rate" aria-label="Close rate slider">
+            <small>Booked appointments becoming customers</small>
+          </div>
+          <div class="assumption-control" data-field="average_sale">
+            <label for="average-sale">Average sale value</label>
+            <div class="assumption-value"><span>$</span><input id="average-sale" name="average_sale" type="number" min="0" max="1000000" step="0.01" inputmode="decimal"><span>USD</span></div>
+            <input type="range" min="0" max="10000" step="0.01" data-range="average_sale" aria-label="Average sale value slider">
+            <small>Revenue per new customer</small>
+          </div>
+          <div class="assumption-control cost-control" data-field="monthly_cost">
+            <label for="monthly-cost">Estimated monthly AI cost</label>
+            <div class="assumption-value"><span>$</span><input id="monthly-cost" name="monthly_cost" type="number" min="0" max="1000000" step="0.01" inputmode="decimal"><span>USD</span></div>
+            <input type="range" min="0" max="5000" step="0.01" data-range="monthly_cost" aria-label="Estimated monthly AI cost slider">
+            <small>A scenario assumption; this is not a quote</small>
+          </div>
+        </form>
+        <div id="simulator-status" class="inline-status" role="status" aria-live="polite">Calculating your scenario…</div>
+        <div id="simulator-results" class="simulator-results" aria-busy="true">
+          <div class="primary-result"><span class="eyebrow">POTENTIAL MONTHLY REVENUE</span><strong id="monthly-revenue">—</strong><span>Additional revenue under your assumptions</span></div>
+          <div class="secondary-results">
+            <div><span>Annual revenue</span><strong id="annual-revenue">—</strong></div>
+            <div><span>Monthly revenue less AI cost</span><strong id="monthly-net">—</strong></div>
+            <div><span>Return on AI cost</span><strong id="roi-percent">—</strong></div>
+          </div>
+          <div class="conversion-flow" aria-label="Lead recovery calculation">
+            <div><strong id="missed-leads">—</strong><span>missed leads</span></div><span class="flow-arrow" aria-hidden="true">→</span>
+            <div><strong id="recovered-leads">—</strong><span>recovered</span></div><span class="flow-arrow" aria-hidden="true">→</span>
+            <div><strong id="booked-appointments">—</strong><span>appointments</span></div><span class="flow-arrow" aria-hidden="true">→</span>
+            <div><strong id="new-customers">—</strong><span>new customers</span></div>
+          </div>
+        </div>
+        <div class="simulator-footer"><span>Expected values may be fractional. Actual outcomes will vary.</span><button id="explain-scenario" class="text-button" type="button" disabled>Ask the advisor about this scenario <span aria-hidden="true">↗</span></button></div>
+        <details class="calculation-details"><summary>See the calculation</summary><div id="formulas" class="formula-list"></div><p id="break-even-note"></p><p>This estimate does not include delivery costs, taxes, attribution effects, or other business expenses.</p></details>
+      </section>
+
+      <section class="voice-lab panel" id="voice-lab" aria-labelledby="voice-title">
+        <div class="section-heading">
+          <div><span class="eyebrow">04 / EXPERIENCE THE AGENTS</span><h2 id="voice-title">Meet your next front line</h2></div>
+          <span class="quiet-badge">FireWireAds Voice AI</span>
+        </div>
+        <p class="section-description">Choose an agent and a realistic scenario. Each demonstration's availability is shown below.</p>
+        <div id="agent-selector" class="agent-selector" role="group" aria-label="Choose a voice agent"></div>
+        <div id="agent-stage" class="agent-stage">
+          <div class="agent-art" aria-hidden="true"><div class="agent-orbit"></div><div class="agent-orbit orbit-two"></div><div class="waveform"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><span>FIREWIRE VOICE AI</span></div>
+          <div class="agent-brief">
+            <span id="agent-mode" class="mode-badge"></span><h3 id="agent-name"></h3><p id="agent-description"></p>
+            <label for="voice-scenario">Your demo scenario</label><select id="voice-scenario"></select>
+            <p id="scenario-brief" class="scenario-brief"></p>
+            <div id="agent-actions"></div><p id="agent-reason" class="agent-reason"></p>
+          </div>
+        </div>
+        <div id="voice-player-container" class="voice-player" hidden><video id="voice-player" controls playsinline preload="none" aria-label="Recorded FireWireAds voice agent demonstration"></video><p>Recorded demonstration · This player does not initiate calls or enroll contacts.</p></div>
+        <div id="voice-browser-container" class="voice-player" hidden><p>An isolated provider adapter is configured. Browser audio remains unverified until a live demonstration succeeds. Microphone permission is your choice.</p></div>
+      </section>
+
+      <section class="evidence-section" aria-labelledby="evidence-title">
+        <div class="section-heading outside-heading"><div><span class="eyebrow">THE EVIDENCE BEHIND THE ADVICE</span><h2 id="evidence-title">Research you can inspect</h2></div><span id="source-count" class="section-aside"></span></div>
+        <div id="evidence-sources" class="source-grid"></div>
+        <div id="research-attribution" class="research-attribution" hidden><span class="eyebrow">GOOGLE SEARCH GROUNDING</span></div>
+      </section>
+
+      <section class="follow-up panel" aria-labelledby="follow-up-title">
+        <div><span class="eyebrow">TURN INSIGHT INTO A NEXT STEP</span><h2 id="follow-up-title">Build an implementation plan</h2><p>Capture the opportunity and your priorities as a draft follow-up.</p></div>
+        <button id="open-follow-up" class="button button-primary" type="button">Prepare a plan <span aria-hidden="true">↗</span></button>
+        <form id="follow-up-form" hidden>
+          <label for="follow-up-notes">What should the plan focus on?</label><textarea id="follow-up-notes" maxlength="1000" rows="3" placeholder="For example: after-hours calls, appointment scheduling, and measuring recovered leads."></textarea>
+          <div class="follow-up-form-actions"><span>Creates a draft. No email or SMS is sent.</span><button id="save-follow-up" class="button button-primary" type="submit">Save draft</button></div>
+          <p id="follow-up-status" class="inline-status" role="status" aria-live="polite"></p>
+        </form>
+      </section>
+
+      <details id="engineering" class="engineering panel">
+        <summary><span><span class="eyebrow">BUILT TO BE EXPLAINED</span><span class="engineering-title">Engineering View</span><span class="engineering-summary">Architecture, integration status, and real request traces</span></span><span class="engineering-chevron" aria-hidden="true">↗</span></summary>
+        <div class="engineering-body">
+          <div class="engineering-intro"><p>Inspect how this request moves through the Python application. Status reflects available configuration and observed tests.</p><button id="refresh-engineering" class="button button-secondary button-small" type="button">Refresh</button></div>
+          <div class="architecture-flow" aria-label="Application architecture"><div><span>01</span><strong>HighLevel</strong><small>Contact context</small></div><b aria-hidden="true">→</b><div><span>02</span><strong>FastAPI</strong><small>Secure sessions</small></div><b aria-hidden="true">→</b><div><span>03</span><strong>Google Cloud</strong><small>Saved research</small></div><b aria-hidden="true">→</b><div><span>04</span><strong>OpenAI</strong><small>Grounded advice</small></div><b aria-hidden="true">→</b><div><span>05</span><strong>Dashboard</strong><small>Simulator + voice</small></div></div>
+          <p id="architecture-detail" class="architecture-detail"></p>
+          <div id="integration-statuses" class="integration-grid"></div>
+          <div class="trace-heading"><h3>Recent application requests</h3><span class="quiet-badge">Live application events</span></div>
+          <p class="trace-description">Actual requests recorded by this application. No credentials, conversation text, or contact details appear here.</p>
+          <div id="engineering-status" class="inline-status" role="status" aria-live="polite"></div>
+          <div class="trace-table-wrap"><table class="trace-table"><caption class="sr-only">Recent request processing information</caption><thead><tr><th scope="col">Request</th><th scope="col">Result</th><th scope="col">Duration</th><th scope="col">Provider / tokens</th></tr></thead><tbody id="request-traces"></tbody></table></div>
+        </div>
+      </details>
+      <footer class="dashboard-footer"><span class="footer-brand">ProspectIQ <span>by FireWireAds</span></span><span>Evidence first. Human decisions always.</span></footer>
+    </div>
+
+    <aside id="advisor" class="advisor panel" aria-labelledby="advisor-title">
+      <div class="advisor-heading"><span class="advisor-avatar" aria-hidden="true">✦</span><div><h2 id="advisor-title">Your business advisor</h2><p id="advisor-company"></p></div><span class="advisor-status-dot" aria-hidden="true"></span></div>
+      <div class="advisor-mode-row"><span id="advisor-provider" class="provider-badge">Loading</span><button id="chat-history-button" class="text-button" type="button">Session history</button></div>
+      <p id="advisor-mode-note" class="advisor-mode-note"></p>
+      <div id="chat-messages" class="chat-messages" role="log" aria-live="polite" aria-relevant="additions" aria-label="Advisor conversation"></div>
+      <div id="chat-suggestions" class="chat-suggestions"><button type="button" data-prompt="What is our strongest opportunity, and what evidence supports it?">What's our strongest opportunity? <span aria-hidden="true">↗</span></button><button type="button" data-prompt="What should we verify before investing in an AI agent?">What should we verify first? <span aria-hidden="true">↗</span></button><button type="button" data-prompt="Help me prioritize a small, measurable first implementation.">Plan a measurable first step <span aria-hidden="true">↗</span></button></div>
+      <div id="chat-status" class="chat-status" role="status" aria-live="polite"></div>
+      <form id="chat-form" class="chat-form"><label for="chat-input" class="sr-only">Ask the business advisor</label><textarea id="chat-input" placeholder="Ask about this business…" maxlength="2000" rows="2"></textarea><button id="chat-send" type="submit" aria-label="Send message"><span aria-hidden="true">↑</span></button></form>
+      <div class="advisor-footer"><span>Advice is grounded in the displayed research.</span><span id="chat-usage">Usage appears after each response.</span></div>
+    </aside>
+  </main>
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <button id="advisor-shortcut" class="advisor-shortcut" type="button" hidden><span aria-hidden="true">✦</span> Ask the advisor <span aria-hidden="true">↗</span></button>
+</body>
+</html>
